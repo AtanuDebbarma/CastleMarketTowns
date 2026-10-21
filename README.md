@@ -2,6 +2,8 @@
 
 A Mount & Blade II: Bannerlord mod that turns castles into small market towns while they stay castles.
 
+**Download:** [Castle Market Towns on Nexus Mods][nexus]
+
 ## Why this mod exists
 
 Throughout history, castles were never only military outposts. They were the seats of lords, built to protect the surrounding fiefs, villages and lands, and markets, craftsmen and trade grew up around their walls.
@@ -90,7 +92,7 @@ With War Sails, castles only link to towns they can actually reach, including th
 ## Installation
 
 1. Install [BLSE][blse], [Harmony][harmony], [ButterLib][butterlib], [UIExtenderEx][uiextenderex] and [MCM][mcm].
-2. Copy the `CastleMarketTowns` folder into `Mount & Blade II Bannerlord\Modules`.
+2. Download Castle Market Towns from [Nexus Mods][nexus]. Install it with Vortex (*Mod Manager Download*), or extract the `CastleMarketTowns` folder into `Mount & Blade II Bannerlord\Modules`.
 3. Start the game through the [BLSE][blse] launcher, enable Castle Market Towns and place it after [Harmony][harmony] and [MCM][mcm].
 
 The mod can be added to an existing campaign.
