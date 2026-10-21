@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+
+# Local build settings
+*.user.props
+*.user
+*.suo
+
+# IDE folders
+.vs/
+.vscode/
+.idea/
+
+# Release archives
+*.zip
+*.7z
+*.rar
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store

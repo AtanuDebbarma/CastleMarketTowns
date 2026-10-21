@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module>
+  <Name value="Castle Market Towns"/>
+  <Id value="CastleMarketTowns"/>
+  <Version value="v1.0.0"/>
+  <SingleplayerModule value="true"/>
+  <MultiplayerModule value="false"/>
+  <DependedModules>
+    <DependedModule Id="Native" DependentVersion="v1.4.8"/>
+    <DependedModule Id="SandBoxCore" DependentVersion="v1.4.8"/>
+    <DependedModule Id="Sandbox" DependentVersion="v1.4.8"/>
+    <DependedModule Id="StoryMode" DependentVersion="v1.4.8"/>
+    <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2.248"/>
+    <DependedModule Id="Bannerlord.MBOptionScreen" DependentVersion="v5.12.3"/>
+  </DependedModules>
+  <DependedModuleMetadatas>
+    <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="v1.4.8"/>
+    <DependedModuleMetadata id="SandBoxCore" order="LoadBeforeThis" version="v1.4.8"/>
+    <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="v1.4.8"/>
+    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="v1.4.8"/>
+    <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" version="v2.4.2.248"/>
+    <DependedModuleMetadata id="Bannerlord.MBOptionScreen" order="LoadBeforeThis" version="v5.12.3"/>
+  </DependedModuleMetadatas>
+  <SubModules>
+    <SubModule>
+      <Name value="CastleMarketTowns"/>
+      <DLLName value="CastleMarketTowns.dll"/>
+      <SubModuleClassType value="CastleMarketTowns.CastleMarketTownsSubModule"/>
+      <Tags>
+        <Tag key="DedicatedServerType" value="none"/>
+        <Tag key="IsNoRenderModeElement" value="false"/>
+      </Tags>
+    </SubModule>
+  </SubModules>
+</Module>

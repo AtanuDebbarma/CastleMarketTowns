@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Local settings such as the game folder go in CastleMarketTowns.user.props, which git ignores. -->
+  <Import Project="CastleMarketTowns.user.props" Condition="Exists('CastleMarketTowns.user.props')" />
+
+  <PropertyGroup>
+    <BannerlordDir Condition="'$(BannerlordDir)' == ''">$(BANNERLORD_DIR)</BannerlordDir>
+    <BannerlordDir Condition="'$(BannerlordDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Mount &amp; Blade II Bannerlord</BannerlordDir>
+    <BannerlordRoot>$(BannerlordDir)</BannerlordRoot>
+    <BannerlordRoot Condition="!HasTrailingSlash('$(BannerlordRoot)')">$(BannerlordRoot)\</BannerlordRoot>
+    <BannerlordBin>$(BannerlordRoot)bin\Win64_Shipping_Client\</BannerlordBin>
+    <BannerlordModules>$(BannerlordRoot)Modules\</BannerlordModules>
+    <DeployToGame Condition="'$(DeployToGame)' == ''">false</DeployToGame>
+
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <Platform Condition="'$(Platform)' == ''">x64</Platform>
+    <ProjectGuid>{6F1C2B7E-3D4A-4E58-9B21-7C0D5A9E4F13}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>CastleMarketTowns</RootNamespace>
+    <AssemblyName>CastleMarketTowns</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <LangVersion>5</LangVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <Optimize>true</Optimize>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
+    <Deterministic>true</Deterministic>
+    <OutputPath>bin\Win64_Shipping_Client\</OutputPath>
+    <IntermediateOutputPath>obj\</IntermediateOutputPath>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <!-- Machines without the .NET Framework 4.7.2 targeting pack build against the installed runtime instead. -->
+  <PropertyGroup Condition="!Exists('$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\$(TargetFrameworkVersion)\mscorlib.dll')">
+    <FrameworkPathOverride>$(WINDIR)\Microsoft.NET\Framework64\v4.0.30319</FrameworkPathOverride>
+    <BypassFrameworkInstallChecks>true</BypassFrameworkInstallChecks>
+    <NetStandardPath>$(FrameworkPathOverride)\netstandard.dll</NetStandardPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(NetStandardPath)' == ''">
+    <NetStandardPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\Framework\.NETFramework\$(TargetFrameworkVersion)\Facades\netstandard.dll</NetStandardPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="netstandard">
+      <HintPath>$(NetStandardPath)</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.MountAndBlade">
+      <HintPath>$(BannerlordBin)TaleWorlds.MountAndBlade.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.CampaignSystem">
+      <HintPath>$(BannerlordBin)TaleWorlds.CampaignSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.Core">
+      <HintPath>$(BannerlordBin)TaleWorlds.Core.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.DotNet">
+      <HintPath>$(BannerlordBin)TaleWorlds.DotNet.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.Library">
+      <HintPath>$(BannerlordBin)TaleWorlds.Library.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.Localization">
+      <HintPath>$(BannerlordBin)TaleWorlds.Localization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.ObjectSystem">
+      <HintPath>$(BannerlordBin)TaleWorlds.ObjectSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="TaleWorlds.SaveSystem">
+      <HintPath>$(BannerlordBin)TaleWorlds.SaveSystem.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="SandBox">
+      <HintPath>$(BannerlordModules)SandBox\bin\Win64_Shipping_Client\SandBox.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(BannerlordModules)Bannerlord.Harmony\bin\Win64_Shipping_Client\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="MCMv5">
+      <HintPath>$(BannerlordModules)Bannerlord.MBOptionScreen\bin\Win64_Shipping_Client\MCMv5.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="src\*.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="SubModule.xml" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+
+  <Target Name="CheckBannerlordDir" BeforeTargets="ResolveAssemblyReferences">
+    <Error Condition="!Exists('$(BannerlordBin)TaleWorlds.CampaignSystem.dll')" Text="Bannerlord was not found in '$(BannerlordDir)'. Set BannerlordDir in CastleMarketTowns.user.props, set the BANNERLORD_DIR environment variable, or pass /p:BannerlordDir=&quot;...&quot;." />
+    <Error Condition="!Exists('$(BannerlordModules)Bannerlord.Harmony\bin\Win64_Shipping_Client\0Harmony.dll')" Text="Harmony was not found in '$(BannerlordModules)Bannerlord.Harmony'. Install the Harmony module before building." />
+    <Error Condition="!Exists('$(BannerlordModules)Bannerlord.MBOptionScreen\bin\Win64_Shipping_Client\MCMv5.dll')" Text="Mod Configuration Menu was not found in '$(BannerlordModules)Bannerlord.MBOptionScreen'. Install MCM before building." />
+  </Target>
+
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
+    <Copy SourceFiles="SubModule.xml" DestinationFolder="$(BannerlordModules)CastleMarketTowns\" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BannerlordModules)CastleMarketTowns\bin\Win64_Shipping_Client\" />
+    <Message Importance="high" Text="Deployed Castle Market Towns to $(BannerlordModules)CastleMarketTowns" />
+  </Target>
+</Project>
