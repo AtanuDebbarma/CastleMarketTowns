@@ -47,9 +47,9 @@ Every town feature was weighed against a few rules. A feature was included only 
 5. **A lord's seat, not a pleasure district.** Brothels from other mods are kept out of castles.
 6. **Optional and reversible.** Every feature has its own switch. Turning a feature off returns the castles to vanilla and removes only what the mod added.
 
-## Mod options (MCM)
+## Mod options ([MCM][mcm])
 
-All values and features can be changed in the game under **Options > Mod Options > Castle Market Towns**, without restarting. You can switch features on or off, choose which castles are covered (your clan, your kingdom, or everyone), and adjust:
+All values and features can be changed in the game through [Mod Configuration Menu (MCM)][mcm], under **Options > Mod Options > Castle Market Towns**, without restarting. You can switch features on or off, choose which castles are covered (your clan, your kingdom, or everyone), and adjust:
 
 - the number of merchants, artisans and workshops;
 - the prosperity floor, starting market stock, production and consumption;
@@ -65,12 +65,18 @@ All values and features can be changed in the game under **Options > Mod Options
 |---|---|---|
 | Mount & Blade II: Bannerlord | 1.4.8 | 1.4.x |
 | War Sails (NavalDLC), optional | 1.2.8 | 1.2.x |
-| [Harmony](https://www.nexusmods.com/mountandblade2bannerlord/mods/2006) | 2.4.2 | 2.x |
-| [ButterLib](https://www.nexusmods.com/mountandblade2bannerlord/mods/2018) | 2.12.0 | 2.x |
-| [UIExtenderEx](https://www.nexusmods.com/mountandblade2bannerlord/mods/2102) | 2.13.3 | 2.x |
-| [Mod Configuration Menu v5](https://www.nexusmods.com/mountandblade2bannerlord/mods/612) | 5.12.3 | 5.x |
+| [Bannerlord Software Extender (BLSE)][blse] | 1.7.2 | 1.x |
+| [Harmony][harmony] | 2.4.2 | 2.x |
+| [ButterLib][butterlib] | 2.12.0 | 2.x |
+| [UIExtenderEx][uiextenderex] | 2.13.3 | 2.x |
+| [Mod Configuration Menu v5 (MCM)][mcm] | 5.12.3 | 5.x |
 
-The mod only uses the stable public parts of Harmony and MCM, so newer releases with the same major version (Harmony 2.x, MCM 5.x) should work without changes. A new major version, such as MCM 6, may need an update of this mod. ButterLib and UIExtenderEx are required by MCM, not by this mod directly.
+This mod needs [Harmony][harmony] and [MCM][mcm] directly. The others are needed by those two:
+
+- [MCM][mcm] depends on [Harmony][harmony], [ButterLib][butterlib] and [UIExtenderEx][uiextenderex].
+- [Harmony][harmony] depends on [BLSE][blse]. Start the game through the BLSE launcher (`Bannerlord.BLSE.Launcher.exe` or `Bannerlord.BLSE.LauncherEx.exe`), as described on its page.
+
+The mod only uses the stable public parts of [Harmony][harmony] and [MCM][mcm], so newer releases with the same major version (Harmony 2.x, MCM 5.x) should work without changes. A new major version, such as MCM 6, may need an update of this mod.
 
 Bannerlord updates can change the game code this mod adjusts. If that happens, the affected feature stays inactive and a message naming it is written to the game log, instead of the game crashing.
 
@@ -83,9 +89,9 @@ With War Sails, castles only link to towns they can actually reach, including th
 
 ## Installation
 
-1. Install Harmony, ButterLib, UIExtenderEx and MCM.
+1. Install [BLSE][blse], [Harmony][harmony], [ButterLib][butterlib], [UIExtenderEx][uiextenderex] and [MCM][mcm].
 2. Copy the `CastleMarketTowns` folder into `Mount & Blade II Bannerlord\Modules`.
-3. In the launcher, enable Castle Market Towns and place it after Harmony and MCM.
+3. Start the game through the [BLSE][blse] launcher, enable Castle Market Towns and place it after [Harmony][harmony] and [MCM][mcm].
 
 The mod can be added to an existing campaign.
 
@@ -93,7 +99,7 @@ The mod can be added to an existing campaign.
 
 The mod adds no save types of its own, so a save still loads without it. To return castles to vanilla before removing it:
 
-1. Load the campaign. In MCM, turn off **Enable castle markets**.
+1. Load the campaign. In [MCM][mcm], turn off **Enable castle markets**.
 2. Let three or more in-game days pass. Each castle cleans up on its daily update:
    - the tavern, mod workshops and castle Marketplace are removed;
    - the goods and prosperity the mod added are taken back;
@@ -104,13 +110,13 @@ The mod adds no save types of its own, so a save still loads without it. To retu
 
 ## Building from source
 
-The repository contains only source code. The TaleWorlds, Harmony and MCM DLLs are not included; the build references them from your game installation.
+The repository contains only source code. The TaleWorlds, [Harmony][harmony] and [MCM][mcm] DLLs are not included; the build references them from your game installation.
 
 Requirements:
 
 - Windows with .NET Framework 4.7.2 or later.
 - Visual Studio 2019 or later, or the Visual Studio Build Tools. The .NET Framework's own MSBuild also works.
-- Bannerlord with Harmony and MCM installed.
+- Bannerlord with [Harmony][harmony] and [MCM][mcm] installed.
 
 The code is limited to C# 5 so it builds with the .NET Framework compiler too.
 
@@ -156,7 +162,14 @@ Copyright (C) 2026 AtanuDebbarma.
 
 Castle Market Towns is free software under the [GNU General Public License v3.0](LICENSE), with an additional attribution term described in [NOTICE](NOTICE):
 
-- **Using or modifying this code:** if you publish a mod or other work that uses or is based on this code, you must credit **Castle Market Towns by AtanuDebbarma** with a link to this repository, in your source code and in your mod's documentation. Your work must also be released under the GPL v3.
+- **Using or modifying this code:** if you publish a mod or other work that uses or is based on this code, you must credit **Castle Market Towns by AtanuDebbarma** with a link to [this repository][repo], in your source code and in your mod's documentation. Your work must also be released under the GPL v3.
 - **Using it as inspiration:** if this project inspired your work without you copying its code, a credit and link are kindly requested.
 
 Mount & Blade II: Bannerlord is a trademark of TaleWorlds Entertainment. This project is not affiliated with or endorsed by TaleWorlds.
+
+[mcm]: https://www.nexusmods.com/mountandblade2bannerlord/mods/612
+[butterlib]: https://www.nexusmods.com/mountandblade2bannerlord/mods/2018?tab=description
+[harmony]: https://www.nexusmods.com/mountandblade2bannerlord/mods/2006?tab=description
+[uiextenderex]: https://www.nexusmods.com/mountandblade2bannerlord/mods/2102?tab=description
+[blse]: https://www.nexusmods.com/mountandblade2bannerlord/mods/1?tab=description
+[repo]: https://github.com/AtanuDebbarma/CastleMarketTowns
