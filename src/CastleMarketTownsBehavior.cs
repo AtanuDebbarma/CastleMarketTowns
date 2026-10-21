@@ -26,7 +26,6 @@ namespace CastleMarketTowns
 {
     public class CastleMarketTownsBehavior : CampaignBehaviorBase
     {
-        private const string LegacyMarketplaceId = "castle_market_towns_marketplace";
         private const string WorkshopTagPrefix = "castle_market_town_workshop_";
         private const string ZeroSnapshotMarker = "*";
         private const string FestivalRole = "festival";
@@ -151,16 +150,6 @@ namespace CastleMarketTowns
             ExpandZeroSnapshots();
             ValidateOwnership();
             AddMenus(starter);
-            foreach (Settlement settlement in Settlement.All)
-            {
-                if (settlement.IsCastle && settlement.Town != null)
-                {
-                    MigrateLegacyMarketplace(settlement.Town);
-                }
-            }
-
-            UnregisterLegacyMarketplace();
-
             foreach (Settlement settlement in Settlement.All)
             {
                 if (!settlement.IsCastle || settlement.Town == null)
@@ -1772,77 +1761,6 @@ namespace CastleMarketTowns
 
             CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
             return settings == null || settings.OverrideCastleProjects;
-        }
-
-        private static void MigrateLegacyMarketplace(Town town)
-        {
-            if (town.Buildings == null)
-            {
-                return;
-            }
-
-            BuildingType marketplace = DefaultBuildingTypes.SettlementMarketplace;
-            if (marketplace == null)
-            {
-                return;
-            }
-
-            FieldInfo typeField = typeof(Building).GetField("_buildingType", BindingFlags.Instance | BindingFlags.NonPublic);
-            bool hasVanilla = false;
-            foreach (Building building in town.Buildings)
-            {
-                if (building != null && building.BuildingType == marketplace)
-                {
-                    hasVanilla = true;
-                    break;
-                }
-            }
-
-            List<Building> legacy = new List<Building>();
-            foreach (Building building in town.Buildings)
-            {
-                if (building != null && building.BuildingType != null && building.BuildingType.StringId == LegacyMarketplaceId)
-                {
-                    legacy.Add(building);
-                }
-            }
-
-            for (int i = 0; i < legacy.Count; i++)
-            {
-                if (!hasVanilla && typeField != null)
-                {
-                    typeField.SetValue(legacy[i], marketplace);
-                    hasVanilla = true;
-                    OwnedMarketplaces.Add(town.Settlement.StringId);
-                    MarketplaceBuildings[town.Settlement.StringId] = legacy[i];
-                }
-                else
-                {
-                    town.Buildings.Remove(legacy[i]);
-                    RemoveFromQueue(town, legacy[i]);
-                }
-            }
-        }
-
-        private static void UnregisterLegacyMarketplace()
-        {
-            try
-            {
-                if (Game.Current == null || Game.Current.ObjectManager == null)
-                {
-                    return;
-                }
-
-                BuildingType legacy = Game.Current.ObjectManager.GetObject<BuildingType>(LegacyMarketplaceId);
-                if (legacy != null)
-                {
-                    Game.Current.ObjectManager.UnregisterObject(legacy);
-                }
-            }
-            catch (Exception exception)
-            {
-                Debug.Print("Castle Market Towns could not remove the old castle marketplace type: " + exception.Message);
-            }
         }
 
         internal static void SyncCastleProjects(Settlement settlement)
