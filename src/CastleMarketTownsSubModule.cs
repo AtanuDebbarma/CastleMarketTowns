@@ -22,6 +22,11 @@ namespace CastleMarketTowns
 
                 try
                 {
+                    if (!PatchTargetsExist(type))
+                    {
+                        continue;
+                    }
+
                     _harmony.CreateClassProcessor(type).Patch();
                 }
                 catch (System.Exception exception)
@@ -31,6 +36,48 @@ namespace CastleMarketTowns
             }
 
             ReportEmptyTranspilers();
+        }
+
+        // Harmony quietly skips a class when its Prepare method returns false. Check those classes explicitly so a renamed or
+        // removed game method produces the same named diagnostic as a patching exception or a transpiler that matched no code.
+        private static bool PatchTargetsExist(System.Type patchType)
+        {
+            BindingFlags flags = BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+            MethodInfo prepare = patchType.GetMethod("Prepare", flags, null, System.Type.EmptyTypes, null);
+            if (prepare != null && prepare.ReturnType == typeof(bool) && !(bool)prepare.Invoke(null, null))
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not find any game methods for " + patchType.Name + "; that castle feature is inactive, likely because another mod or a game update changed it.");
+                return false;
+            }
+
+            MethodInfo targetMethods = patchType.GetMethod("TargetMethods", flags, null, System.Type.EmptyTypes, null);
+            if (targetMethods == null)
+            {
+                return true;
+            }
+
+            System.Collections.IEnumerable targets = targetMethods.Invoke(null, null) as System.Collections.IEnumerable;
+            bool found = false;
+            if (targets != null)
+            {
+                foreach (object target in targets)
+                {
+                    if (target == null)
+                    {
+                        TaleWorlds.Library.Debug.Print("Castle Market Towns found a missing game method for " + patchType.Name + "; that castle feature is inactive, likely because another mod or a game update changed it.");
+                        return false;
+                    }
+
+                    found = true;
+                }
+            }
+
+            if (!found)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not find any game methods for " + patchType.Name + "; that castle feature is inactive, likely because another mod or a game update changed it.");
+            }
+
+            return found;
         }
 
         // Every transpiler here routes the patched method through a helper in this assembly; no such call means it matched nothing.
@@ -102,6 +149,24 @@ namespace CastleMarketTowns
             catch (System.Exception exception)
             {
                 TaleWorlds.Library.Debug.Print("Castle Market Towns could not guard Captivity Events brothels: " + exception.Message);
+            }
+
+            try
+            {
+                CastleSmithyGuard.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not open smithies in castles: " + exception.Message);
+            }
+
+            try
+            {
+                CastleWarSailsCompanionGuard.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not place companions in castle taverns under War Sails: " + exception.Message);
             }
         }
 

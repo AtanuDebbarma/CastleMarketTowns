@@ -6,6 +6,8 @@ namespace CastleMarketTowns
 {
     public sealed class CastleMarketTownsSettings : AttributeGlobalSettings<CastleMarketTownsSettings>
     {
+        internal const int MaxCompanionStayDays = 30;
+
         public override string Id { get { return "CastleMarketTowns"; } }
         public override string DisplayName { get { return "Castle Market Towns"; } }
         public override string FolderName { get { return "CastleMarketTowns"; } }
@@ -31,6 +33,10 @@ namespace CastleMarketTowns
             OverrideCastleProjects = true;
             CaravansVisitCastles = true;
             HotButterTavernOptions = true;
+            CastleCompanions = true;
+            CompanionArrivalPercent = 100;
+            CompanionDeparturePercent = 10;
+            CompanionMinimumStayDays = 7;
             ApplyToKingdom = true;
             ApplyToNpc = true;
             MerchantNotables = 2;
@@ -56,6 +62,7 @@ namespace CastleMarketTowns
             TradeProsperityPercent = 50;
             CastleHealing = true;
             CastleRepair = true;
+            CastleSmithy = true;
         }
 
         [SettingPropertyBool("Enable castle markets", Order = 0, RequireRestart = false, HintText = "Turns every castle into a small trading settlement. The castle stays a castle: same walls and the same noble recruits from its villages. Rebellion is a separate switch.")]
@@ -66,7 +73,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("General")]
         public bool EnableTavern { get; set; }
 
-        [SettingPropertyBool("Keep brothels out", Order = 2, RequireRestart = false, HintText = "Captivity Events adds its brothel to the town menu and to a location named brothel. Castles keep the castle menu, and any brothel room added to a castle is removed.")]
+        [SettingPropertyBool("Keep brothels out", Order = 2, RequireRestart = false, HintText = "Independent of Enable castle markets and on by default. Captivity Events adds its brothel to the town menu and to a location named brothel. Castles keep the castle menu, and any location named brothel is removed from every castle. Turn this off to let another mod keep a brothel in castles.")]
         [SettingPropertyGroup("General")]
         public bool BlockBrothels { get; set; }
 
@@ -90,23 +97,39 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("General")]
         public bool HotButterTavernOptions { get; set; }
 
+        [SettingPropertyBool("Companions in castle taverns", IsToggle = true, Order = 0, RequireRestart = false, HintText = "On by default. On the first eligible day, creates a small, bounded group of companions in different castle taverns using the active companion system's unused templates and creation rules: the base game's, or a replacement such as Women in Calradia's. A save marker prevents reseeding. If no compatible companion system is found, the seed is skipped once and castle taverns fill only as companions move from towns. Afterward, unhired companions move between towns and nearby castles; the settings in this group control how often. Supports War Sails without requiring it. Turn this off and tracked unhired castle companions move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists, once they are free to move: not giving a quest, imprisoned, in a party or in the castle you are in. Turning it back on does not seed again. If another mod overrides companion behavior and causes problems in castles, leave this off. Needs Add a tavern.")]
+        [SettingPropertyGroup("General/Castle companions")]
+        public bool CastleCompanions { get; set; }
+
+        [SettingPropertyInteger("Arrival chance percent", 0, 100, "0", Order = 1, RequireRestart = false, HintText = "Each day, the chance that one unhired companion in a town moves to the tavern of one of the 3 castles closest to that town that has no unhired companion yet. Default 100. Arrivals and the one-time seed stop once castles hold a third of the free companions; if hiring later shrinks the free pool, castles can briefly hold more until companions leave. 0 stops new arrivals.")]
+        [SettingPropertyGroup("General/Castle companions")]
+        public int CompanionArrivalPercent { get; set; }
+
+        [SettingPropertyInteger("Departure chance percent", 0, 100, "0", Order = 2, RequireRestart = false, HintText = "Each day, the chance that one companion this mod moved into a castle goes back to one of the 3 towns closest to that castle, preferring a town without an unhired companion. Default 10. 0 keeps them in castles until they are hired, the base game removes them, or the castle stops hosting companions because this group, the tavern or the castle's coverage is switched off.")]
+        [SettingPropertyGroup("General/Castle companions")]
+        public int CompanionDeparturePercent { get; set; }
+
+        [SettingPropertyInteger("Minimum stay days", 1, MaxCompanionStayDays, "0", Order = 3, RequireRestart = false, HintText = "After this mod moves a companion, it does not move them again for this many days, into a castle or back to a town. Default 7. When a castle stops hosting companions because this group, the tavern or the castle's coverage is switched off, they move out regardless of this. The base game's own town-to-town companion swaps are not affected.")]
+        [SettingPropertyGroup("General/Castle companions")]
+        public int CompanionMinimumStayDays { get; set; }
+
         [SettingPropertyBool("Caravans trade at castles", Order = 9, RequireRestart = false, HintText = "On by default. Every caravan, including yours, NPC caravans, and caravans formed in a castle, can pick a castle as a trade stop, then buy and sell there like in a town. Only castles the mod is active on count, so the two clan switches decide which castles caravans visit. A caravan formed in a castle starts from that castle. Turn this off and caravans only trade in towns, as in vanilla.")]
         [SettingPropertyGroup("General")]
         public bool CaravansVisitCastles { get; set; }
 
-        [SettingPropertyBool("Apply to your kingdom's clans", Order = 7, RequireRestart = false, HintText = "On by default. Covers castles owned by other clans in the kingdom your clan belongs to, and lets lords of those clans recruit at any castle the mod covers, as they do in towns and villages. Your own clan's castles are always changed. Turn this off and those castles go back to vanilla: the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest town. Castles outside your kingdom use the next switch.")]
+        [SettingPropertyBool("Apply to your kingdom's clans", Order = 7, RequireRestart = false, HintText = "On by default. Covers castles owned by other clans in the kingdom your clan belongs to, and lets lords of those clans recruit at any castle the mod covers, as they do in towns and villages. Your own clan's castles are always changed. Turn this off and those castles go back to vanilla: the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists. Castles outside your kingdom use the next switch.")]
         [SettingPropertyGroup("General")]
         public bool ApplyToKingdom { get; set; }
 
-        [SettingPropertyBool("Apply to other kingdoms and clans", Order = 8, RequireRestart = false, HintText = "On by default. Covers castles owned by any clan outside your kingdom: other kingdoms and independent clans. If your clan has no kingdom, this covers every castle you do not own. It also lets lords and caravans of those clans recruit at any castle the mod covers, as they do in towns and villages. Turn it off and they cannot recruit at castles. Turn this off and those castles go back to vanilla: the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest town.")]
+        [SettingPropertyBool("Apply to other kingdoms and clans", Order = 8, RequireRestart = false, HintText = "On by default. Covers castles owned by any clan outside your kingdom: other kingdoms and independent clans. If your clan has no kingdom, this covers every castle you do not own. It also lets lords and caravans of those clans recruit at any castle the mod covers, as they do in towns and villages. Turn it off and they cannot recruit at castles. Turn this off and those castles go back to vanilla: the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists.")]
         [SettingPropertyGroup("General")]
         public bool ApplyToNpc { get; set; }
 
-        [SettingPropertyInteger("Merchants", 0, 4, "0", Order = 0, RequireRestart = false, HintText = "A town keeps 2 merchants. They are the notables who can send caravans. Default 2. Every notable also gives up to 6 recruits. Lowering it moves extra merchants the mod created to the nearest town. Merchants from the base game or other mods stay.")]
+        [SettingPropertyInteger("Merchants", 0, 4, "0", Order = 0, RequireRestart = false, HintText = "A town keeps 2 merchants. They are the notables who can send caravans. Default 2. Every notable also gives up to 6 recruits. Lowering it moves extra merchants the mod created to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists. Merchants from the base game or other mods stay.")]
         [SettingPropertyGroup("People and workshops", GroupOrder = 1)]
         public int MerchantNotables { get; set; }
 
-        [SettingPropertyInteger("Artisans", 0, 4, "0", Order = 1, RequireRestart = false, HintText = "A town keeps 1 artisan. Artisans own workshops. Default 2, so a castle has 4 notables, between a village's 3 and a town's 5. Every notable also gives up to 6 recruits. Lowering it moves extra artisans the mod created to the nearest town. Artisans from the base game or other mods stay.")]
+        [SettingPropertyInteger("Artisans", 0, 4, "0", Order = 1, RequireRestart = false, HintText = "A town keeps 1 artisan. Artisans own workshops. Default 2, so a castle has 4 notables, between a village's 3 and a town's 5. Every notable also gives up to 6 recruits. Lowering it moves extra artisans the mod created to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists. Artisans from the base game or other mods stay.")]
         [SettingPropertyGroup("People and workshops")]
         public int ArtisanNotables { get; set; }
 
@@ -122,7 +145,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("Scale", GroupOrder = 2)]
         public int ProsperityFloor { get; set; }
 
-        [SettingPropertyInteger("Market stock percent", 10, 100, "0", Order = 1, RequireRestart = false, HintText = "Applied once per castle. The castle market starts with this share of the trade goods the nearest town has. 100 matches that town. Default 25, a quarter, so a new castle never rivals a town. Later stock comes from workshops, caravans and normal trade. If the mod stops covering a castle, the goods it added are taken back.")]
+        [SettingPropertyInteger("Market stock percent", 10, 100, "0", Order = 1, RequireRestart = false, HintText = "Applied once per castle. The castle market starts with this share of the trade goods held by the nearest reachable town of its culture, or the nearest reachable town if none exists. 100 matches that town. Default 25, a quarter, so a new castle never rivals a town. Later stock comes from workshops, caravans and normal trade. If the mod stops covering a castle, the goods it added are taken back.")]
         [SettingPropertyGroup("Scale")]
         public int MarketPercent { get; set; }
 
@@ -178,6 +201,10 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("Castle services")]
         public bool CastleRepair { get; set; }
 
+        [SettingPropertyBool("Castle smithy", Order = 2, RequireRestart = false, HintText = "On by default. Adds Enter smithy to the castle menu, the same smithy screen as in towns. Smith, smelt and refine with your own materials, and smithing stamina recovers in castles as in towns. Smithing orders stay in towns, so the castle smithy shows none. Turn this off and the option is hidden.")]
+        [SettingPropertyGroup("Castle services")]
+        public bool CastleSmithy { get; set; }
+
         [SettingPropertyBool("Recruit troops in castles", Order = 0, RequireRestart = false, HintText = "On by default. Adds Recruit troops to the castle menu, the same screen as in towns and villages. The castle's merchants and artisans offer volunteers of the castle's culture, which grow in tier over time like any notable's. Lords recruit there too and travel to castles for recruits, as in towns and villages; the two Apply to switches decide which clans may. Turn this off and castle notables stop producing volunteers.")]
         [SettingPropertyGroup("Castle recruits", GroupOrder = 4)]
         public bool CastleRecruits { get; set; }
@@ -210,7 +237,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("Castle quests")]
         public bool QuestArtisanCantSell { get; set; }
 
-        [SettingPropertyBool("Caravan Ambush", Order = 4, RequireRestart = false, HintText = "Merchant or artisan quest from the base game. On by default. The notable must not own a caravan, as in a town. Castles have no port, so it is always the land version. Quests already running are not affected.")]
+        [SettingPropertyBool("Caravan Ambush", Order = 4, RequireRestart = false, HintText = "Merchant or artisan quest from the base game. On by default. The notable must own at least one caravan, as in a town. Castles have no port, so it is always the land version. Quests already running are not affected.")]
         [SettingPropertyGroup("Castle quests")]
         public bool QuestCaravanAmbush { get; set; }
 

@@ -2,15 +2,18 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
+using Helpers;
 using TaleWorlds.Library;
 using SandBox.CampaignBehaviors;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
+using TaleWorlds.CampaignSystem.ComponentInterfaces;
 using TaleWorlds.CampaignSystem.GameComponents;
 using TaleWorlds.CampaignSystem.Issues;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
+using TaleWorlds.Localization;
 
 namespace CastleMarketTowns
 {
@@ -204,7 +207,9 @@ namespace CastleMarketTowns
     {
         static bool Prefix(MobileParty mobileParty, Settlement settlement)
         {
-            return settlement == null || !settlement.IsCastle || CastleMarketTownsBehavior.RecruiterAllowed(mobileParty);
+            return settlement == null
+                || !settlement.IsCastle
+                || (CastleMarketTownsBehavior.RecruitsAvailable(settlement) && CastleMarketTownsBehavior.RecruiterAllowed(mobileParty));
         }
     }
 
@@ -1026,6 +1031,17 @@ namespace CastleMarketTowns
                 && settlement.Town.MarketData != null;
         }
 
+        public static bool HasPortOrStop(Settlement settlement)
+        {
+            return settlement != null && (settlement.HasPort || (settlement.IsCastle && IsStop(settlement)));
+        }
+
+        public static bool TargetsPort(bool hasNavalNavigationCapability, Town town)
+        {
+            Settlement settlement = town == null ? null : town.Settlement;
+            return hasNavalNavigationCapability && settlement != null && settlement.HasPort;
+        }
+
         public static MBReadOnlyList<Town> Stops()
         {
             if (!Enabled() || Campaign.Current == null)
@@ -1078,7 +1094,56 @@ namespace CastleMarketTowns
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            return CastleCaravanStops.Redirect(instructions, "get_AllTowns", "Stops");
+            return CastleCaravanStops.Redirect(
+                CastleCaravanStops.Redirect(instructions, "get_AllTowns", "Stops"),
+                "get_HasPort",
+                "HasPortOrStop");
+        }
+
+        static void Postfix(MobileParty caravanParty, ref Town __result, ref MobileParty.NavigationType bestNavigationType, ref bool isFromPort, ref bool isTargetingPort)
+        {
+            Settlement settlement = __result == null ? null : __result.Settlement;
+            if (settlement == null || !settlement.IsCastle || !CastleCaravanStops.IsStop(settlement))
+            {
+                return;
+            }
+
+            float distance;
+            AiHelper.GetBestNavigationTypeAndAdjustedDistanceOfSettlementForMobileParty(
+                caravanParty,
+                settlement,
+                false,
+                out bestNavigationType,
+                out distance,
+                out isFromPort);
+            isTargetingPort = false;
+            if (bestNavigationType == MobileParty.NavigationType.None)
+            {
+                __result = null;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(CaravansCampaignBehavior), "GetTradeScoreForTown")]
+    internal static class CastleCaravanRoutePatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+            MethodInfo route = AccessTools.Method(typeof(AiHelper), "GetBestNavigationTypeAndAdjustedDistanceOfSettlementForMobileParty");
+            MethodInfo targetsPort = AccessTools.Method(typeof(CastleCaravanStops), "TargetsPort");
+            int routeCall = codes.FindIndex(delegate(CodeInstruction code) { return code.Calls(route); });
+            for (int i = 0; i < routeCall; i++)
+            {
+                if (codes[i].opcode == OpCodes.Stind_I1)
+                {
+                    codes.Insert(i, new CodeInstruction(OpCodes.Ldarg_2));
+                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Call, targetsPort));
+                    break;
+                }
+            }
+
+            return codes;
         }
     }
 
@@ -1093,6 +1158,15 @@ namespace CastleMarketTowns
 
     [HarmonyPatch(typeof(CaravansCampaignBehavior), "SpawnCaravan")]
     internal static class CastleCaravanHomePatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return CastleCaravanStops.Redirect(instructions, "get_IsTown", "IsStop");
+        }
+    }
+
+    [HarmonyPatch(typeof(CaravansCampaignBehavior), "OnSettlementLeft")]
+    internal static class CastleCaravanDeparturePatch
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
@@ -1131,6 +1205,116 @@ namespace CastleMarketTowns
         {
             CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
             return settlement != null && settlement.IsCastle && (settings == null || settings.BlockBrothels);
+        }
+    }
+
+    // The base game keeps smithing orders for towns only, and the smithy screen and the
+    // crafting orders tutorial both look up the current settlement without checking.
+    internal static class CastleSmithyGuard
+    {
+        public static bool Ready { get; private set; }
+
+        public static void TryPatch(Harmony harmony)
+        {
+            MethodInfo refresh = AccessTools.Method("TaleWorlds.CampaignSystem.ViewModelCollection.WeaponCrafting.WeaponDesign.Order.CraftingOrderPopupVM:RefreshOrders");
+            System.Type tutorialHelper = AccessTools.TypeByName("SandBox.GauntletUI.Tutorial.TutorialHelper");
+            MethodInfo tutorial = tutorialHelper != null ? AccessTools.PropertyGetter(tutorialHelper, "IsCurrentTownHaveDoableCraftingOrder") : null;
+            if (refresh == null || tutorial == null)
+            {
+                Debug.Print("Castle Market Towns could not find the smithy order screen; the castle smithy is inactive.");
+                return;
+            }
+
+            harmony.Patch(refresh, prefix: new HarmonyMethod(typeof(CastleSmithyGuard), "ShowNoCastleOrders"));
+            harmony.Patch(tutorial, prefix: new HarmonyMethod(typeof(CastleSmithyGuard), "NoCastleOrderTutorial"));
+            Ready = true;
+        }
+
+        public static bool ShowNoCastleOrders(object __instance)
+        {
+            if (!CastleWithoutOrders())
+            {
+                return true;
+            }
+
+            Traverse popup = Traverse.Create(__instance);
+            System.Collections.IList orders = popup.Property("CraftingOrders").GetValue() as System.Collections.IList;
+            if (orders != null)
+            {
+                orders.Clear();
+            }
+
+            popup.Property("QuestType").SetValue(0);
+            TextObject count = new TextObject("{=MkVTRqAw}Orders ({ORDER_COUNT})");
+            count.SetTextVariable("ORDER_COUNT", 0);
+            popup.Property("OrderCountText").SetValue(count.ToString());
+            return false;
+        }
+
+        public static bool NoCastleOrderTutorial(ref bool __result)
+        {
+            if (!CastleWithoutOrders())
+            {
+                return true;
+            }
+
+            __result = false;
+            return false;
+        }
+
+        private static bool CastleWithoutOrders()
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            if (Campaign.Current == null || settlement == null || !settlement.IsCastle)
+            {
+                return false;
+            }
+
+            if (settlement.Town == null)
+            {
+                return true;
+            }
+
+            ICraftingCampaignBehavior crafting = Campaign.Current.GetCampaignBehavior<ICraftingCampaignBehavior>();
+            return crafting == null || crafting.CraftingOrders == null || !crafting.CraftingOrders.ContainsKey(settlement.Town);
+        }
+    }
+
+    // Castles admit welcome visitors only after a request that checks the lord's hall, so the castle market sat behind the keep's bribe.
+    // Visitors the castle would let in walk straight in, as in towns; Go to the castle checks the keep instead.
+    [HarmonyPatch(typeof(DefaultSettlementAccessModel), "CanMainHeroEnterSettlement")]
+    internal static class CastlePublicGatePatch
+    {
+        static void Postfix(Settlement settlement, ref SettlementAccessModel.AccessDetails accessDetails)
+        {
+            if (accessDetails.AccessLevel == SettlementAccessModel.AccessLevel.FullAccess && accessDetails.AccessMethod == SettlementAccessModel.AccessMethod.ByRequest && CastleTownRules.Covered(settlement))
+            {
+                accessDetails.AccessMethod = SettlementAccessModel.AccessMethod.Direct;
+            }
+        }
+    }
+
+    // The base game's request for entry checks only the lord's hall, which lets in visitors the castle refuses for their relation with its lord.
+    [HarmonyPatch(typeof(EncounterGameMenuBehavior), "game_menu_request_entry_to_castle_on_consequence")]
+    internal static class CastleRequestEntryPatch
+    {
+        static bool Prefix()
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            if (!CastleTownRules.Covered(settlement))
+            {
+                return true;
+            }
+
+            SettlementAccessModel.AccessDetails access;
+            Campaign.Current.Models.SettlementAccessModel.CanMainHeroEnterSettlement(settlement, out access);
+            if (access.AccessLevel != SettlementAccessModel.AccessLevel.NoAccess)
+            {
+                return true;
+            }
+
+            TaleWorlds.CampaignSystem.GameMenus.GameMenu.SwitchToMenu("menu_castle_entry_denied");
+            return false;
         }
     }
 }

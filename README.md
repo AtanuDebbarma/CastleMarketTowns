@@ -16,10 +16,12 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 
 | Feature | Town (vanilla) | Castle (vanilla) | Castle with this mod |
 |---|---|---|---|
-| Settlement menu | Town menu | Castle menu | Castle menu, with extra options |
-| Market and trade | Yes | No | Yes, smaller. Starts with 25% of the nearest town's goods |
+| Settlement menu | Town menu | Castle menu | Castle menu, with extra options. The dungeon, garrison, stash and lord's hall move under **Go to the castle**, as towns keep them under **Go to the keep** |
+| Entering | Walk in unless at war or wanted. The keep may ask for a bribe | Ask the guards. Visitors from outside the kingdom with clan tier below 3 pay a bribe at the gate | Walk in unless the castle would turn you away (war, any crime, a bad relation with its lord). **Go to the castle** asks for the castle's bribe, as a town keep does |
+| Market and trade | Yes | No | Yes, smaller. Starts with 25% of the nearest reachable same-culture town's goods, falling back to the nearest reachable town |
 | Own production | From its villages | None | 20% of its villages' output, on top of what they send to their town |
 | Tavern | Yes | No | Yes, using the town tavern scene |
+| Companions to hire | In the tavern | None | In the castle tavern. A small one-time seed uses the active companion system's creation rules; afterward free companions move between towns and nearby castles over time |
 | Merchants and artisans | Yes | None | 2 merchants and 2 artisans |
 | Workshops | 4 slots | None | 1 slot |
 | Caravans | Formed by town merchants | None | Formed by castle merchants. Caravans also trade at castles |
@@ -30,6 +32,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Marketplace project | Yes | No | Yes, at 60% of the town cost |
 | Rebellion | Yes | Never | Yes, can be switched off |
 | Town healing perks | Yes | No | Yes |
+| Smithy | Yes, with smithing orders | No | Yes, without smithing orders |
 | Siege food from the market | Yes | No | Yes |
 | Merchant, artisan and village quests | Yes | None | A selection that fits a castle |
 | Arena and tournaments | Yes | No | No |
@@ -45,9 +48,9 @@ Every town feature was weighed against a few rules. A feature was included only 
 1. **A castle stays a castle.** The game never treats a castle as a town. Castles keep the castle menu, walls, garrison, sieges and noble recruits from their villages. Walls, garrisons and siege rules are unchanged, so castles do not become harder for AI lords to take and campaigns do not drag on.
 2. **Between a village and a town.** Every value sits between the two. A castle has 4 notables, between a village's 3 and a town's 5, and its tax, production, recruits and prosperity are scaled the same way. A new castle starts modest and grows through trade. Only a castle with a long run of good trade, next to a town in trouble, can come close to a town.
 3. **Towns remain the economic centres.** A castle's villages still deliver all their goods to their town. The castle gains its own share of production on top, and sells any surplus to its town, as villagers do. Towns never lose stock, prosperity or stability because of this mod.
-4. **Only what a castle can actually host.** Castles have no arena and no town streets in the game. Arenas, tournaments, walking around in third person, and the quests that depend on them were left out on purpose, rather than added in a broken state. A castle tavern uses the town tavern scene, so it is included.
+4. **Only what a castle can actually host.** Castles have no arena and no town streets in the game. Arenas, tournaments, town streets to walk in third person, and the quests that depend on them were left out on purpose, rather than added in a broken state. The base game's **Take a walk around the castle** stays. A castle tavern uses the town tavern scene, so it is included.
 5. **A lord's seat, not a pleasure district.** Brothels from other mods are kept out of castles.
-6. **Optional and reversible.** Every feature has its own switch. Turning a feature off returns the castles to vanilla and removes only what the mod added.
+6. **Optional and reversible.** Most features have their own switch. Town-style castle entry and the **Go to the castle** menu have none; they follow **Enable castle markets** and the two **Apply to** switches. Turning a feature off returns the castles to vanilla and removes only what the mod added. One-time seeded companions remain as ordinary game companions and move out of castles once they are free to move; they are not deleted. **Keep brothels out** is the other deliberate exception: it is independent of the master switch and removes any castle location named `brothel` until its own switch is turned off.
 
 ## Mod options ([MCM][mcm])
 
@@ -58,6 +61,7 @@ All values and features can be changed in the game through [Mod Configuration Me
 - the tax and trade prosperity;
 - recruit speed and noble recruit chance;
 - caravan preferences;
+- companions in castle taverns, with their arrival chance, departure chance and minimum stay;
 - the Marketplace cost;
 - each castle quest.
 
@@ -67,33 +71,33 @@ All values and features can be changed in the game through [Mod Configuration Me
 |---|---|---|
 | Mount & Blade II: Bannerlord | 1.4.8 | 1.4.x |
 | War Sails (NavalDLC), optional | 1.2.8 | 1.2.x |
-| [Bannerlord Software Extender (BLSE)][blse] | 1.7.2 | 1.x |
+| [Bannerlord Software Extender (BLSE)][blse], optional | 1.7.5 | 1.x |
 | [Harmony][harmony] | 2.4.2 | 2.x |
 | [ButterLib][butterlib] | 2.12.0 | 2.x |
-| [UIExtenderEx][uiextenderex] | 2.13.3 | 2.x |
-| [Mod Configuration Menu v5 (MCM)][mcm] | 5.12.3 | 5.x |
+| [UIExtenderEx][uiextenderex] | 3.0.3 | 3.x, as required by MCM 5.13 |
+| [Mod Configuration Menu v5 (MCM)][mcm] | 5.13.1 | 5.x |
 
-This mod needs [Harmony][harmony] and [MCM][mcm] directly. The others are needed by those two:
+This mod needs [Harmony][harmony] and [MCM][mcm] directly. [MCM][mcm] in turn needs [ButterLib][butterlib] and [UIExtenderEx][uiextenderex].
 
-- [MCM][mcm] depends on [Harmony][harmony], [ButterLib][butterlib] and [UIExtenderEx][uiextenderex].
-- [Harmony][harmony] depends on [BLSE][blse]. Start the game through the BLSE launcher (`Bannerlord.BLSE.Launcher.exe` or `Bannerlord.BLSE.LauncherEx.exe`), as described on its page.
+[BLSE][blse] is optional. As [Harmony][harmony]'s page notes, it is not required on Steam, GOG or Epic, and none of the mods above require it there. This mod does not use it either. BLSE improves mod load-order sorting and crash reporting, and the Xbox / PC Game Pass version of the game needs it.
 
 The mod only uses the stable public parts of [Harmony][harmony] and [MCM][mcm], so newer releases with the same major version (Harmony 2.x, MCM 5.x) should work without changes. A new major version, such as MCM 6, may need an update of this mod.
 
 Bannerlord updates can change the game code this mod adjusts. If that happens, the affected feature stays inactive and a message naming it is written to the game log, instead of the game crashing.
 
-With War Sails, castles only link to towns they can actually reach, including the castle on the northern island.
+With War Sails, castles only link to towns they can actually reach. Caravans use the base game's land or mixed sea-and-land navigation to visit castle markets, including the castle on the northern island. Castles remain portless, and ship services remain exclusive to real ports.
 
 ## Compatibility
 
 - **Compatible** with Hot Butter and Captivity Events.
 - **Not compatible** with other mods that turn castles into towns or overhaul castle menus, markets, notables or buildings. Both mods would change the same castle objects. To switch to another castle overhaul, remove this mod first (see below).
+- **Companions:** on the first eligible daily tick, the mod asks the active companion system to create a small, globally capped seed from its unused companion templates and places each in a different eligible castle. This is the base game's companion system, or a replacement that keeps its companion-creation step, such as Women in Calradia's. If no such system is active, the seed is skipped once and castle taverns fill only as existing companions move from towns. A save marker prevents another seed after the option is switched off and on. Afterward, unhired companions move between towns and nearby castles over time. The seed and new arrivals stop once castles hold a third of the free pool; if hiring later shrinks the pool, castles can briefly hold more until companions leave. A companion only moves to one of the 3 castles closest to their town, and returns to one of the 3 towns closest to their castle, so they do not jump across the map. The **Castle companions** group in [MCM][mcm] sets the daily arrival chance (default 100%), the daily departure chance (default 10%) and the minimum stay between moves (default 7 days, 1 to 30); these settings are greyed out while the group's switch is off. The base game's own town-to-town companion swaps are unchanged. War Sails is supported without being required, including while its storyline location model is active. Mods that only add companion templates remain compatible. If another mod overrides companion behavior and causes problems in castles, turn off **Companions in castle taverns** in [MCM][mcm]: tracked unhired castle companions go to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists, once they are free to move (not giving a quest, imprisoned, in a party or in the castle you are in), and the rest of the mod is unaffected. Seeded companions remain normal companions in the world and are not deleted.
 
 ## Installation
 
-1. Install [BLSE][blse], [Harmony][harmony], [ButterLib][butterlib], [UIExtenderEx][uiextenderex] and [MCM][mcm].
+1. Install [Harmony][harmony], [ButterLib][butterlib], [UIExtenderEx][uiextenderex] and [MCM][mcm]. [BLSE][blse] is optional on Steam, GOG and Epic.
 2. Download Castle Market Towns from [Nexus Mods][nexus]. Install it with Vortex (*Mod Manager Download*), or extract the `CastleMarketTowns` folder into `Mount & Blade II Bannerlord\Modules`.
-3. Start the game through the [BLSE][blse] launcher, enable Castle Market Towns and place it after [Harmony][harmony] and [MCM][mcm].
+3. Start the game launcher, or the [BLSE][blse] launcher if you use it. Enable Castle Market Towns and place it after [Harmony][harmony] and [MCM][mcm].
 
 The mod can be added to an existing campaign.
 
@@ -105,8 +109,10 @@ The mod adds no save types of its own, so a save still loads without it. To retu
 2. Let three or more in-game days pass. Each castle cleans up on its daily update:
    - the tavern, mod workshops and castle Marketplace are removed;
    - the goods and prosperity the mod added are taken back;
-   - merchants and artisans created by the mod move to the nearest town;
+   - merchants and artisans created by the mod move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists;
+   - tracked unhired companions, including the one-time seeded companions, move by the same rule and remain normal companions in the world. A companion who is giving a quest, imprisoned or in a party moves only once that ends, so check castle taverns are empty before uninstalling, and leave the castle you are in so its companion can move;
    - daily defaults return to vanilla.
+   - **Keep brothels out** continues to block castle brothels independently; turn that switch off too if you want another mod's brothel restored before uninstalling.
 3. Save to a new slot and exit.
 4. Disable or uninstall the mod.
 
@@ -175,3 +181,4 @@ Mount & Blade II: Bannerlord is a trademark of TaleWorlds Entertainment. This pr
 [uiextenderex]: https://www.nexusmods.com/mountandblade2bannerlord/mods/2102?tab=description
 [blse]: https://www.nexusmods.com/mountandblade2bannerlord/mods/1?tab=description
 [repo]: https://github.com/AtanuDebbarma/CastleMarketTowns
+[nexus]: https://www.nexusmods.com/mountandblade2bannerlord/mods/14182

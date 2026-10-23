@@ -70,6 +70,11 @@ namespace CastleMarketTowns
             return settlement != null && (settlement.IsTown || (settlement.IsCastle && settlement.Town != null));
         }
 
+        public static bool NamesAsTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || (settlement.IsCastle && settlement.Town != null));
+        }
+
         public static bool TaxedAsTown(SettlementComponent component)
         {
             return component != null && (component.IsTown || Covered(component.Settlement));
@@ -159,6 +164,16 @@ namespace CastleMarketTowns
         public static float ScaleTax(float rate, Town town)
         {
             return CoveredTown(town) && Settings != null ? rate * Settings.CastleTaxPercent / 100f : rate;
+        }
+    }
+
+    // The base game gives merchants their "the Broker" style title only when they live in a town.
+    [HarmonyPatch(typeof(NameGenerator), "GenerateHeroFullName")]
+    internal static class CastleMerchantNamePatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return CastleTownRules.Redirect(instructions, typeof(Settlement), "get_IsTown", "NamesAsTown");
         }
     }
 

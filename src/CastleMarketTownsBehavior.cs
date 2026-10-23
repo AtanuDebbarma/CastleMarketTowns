@@ -33,6 +33,7 @@ namespace CastleMarketTowns
 
         // Saves without this version only recorded which castles had their daily defaults swapped, not which buildings were added.
         private const string OwnershipVersion = "2";
+        private const string CompanionSeedVersion = "1";
 
         // Vanilla save entries over 32767 bytes corrupt the save; 8000 UTF-16 chars stay under 24000 UTF-8 bytes.
         private const int SaveChunkLength = 8000;
@@ -69,6 +70,9 @@ namespace CastleMarketTowns
         private string _stockGrantData = "";
         private string _producedStockData = "";
         private string _marketSnapshotData = "";
+        private string _castleCompanionIds = "";
+        private string _companionSeedVersion = "";
+        private string _companionMoveData = "";
         private bool _menusAdded;
 
         public CastleMarketTownsBehavior()
@@ -79,11 +83,15 @@ namespace CastleMarketTowns
             MarketplaceBuildings.Clear();
             DailyBuildings.Clear();
             StockRatios.Clear();
+            CastleCompanions.Sent.Clear();
+            CastleCompanions.LastMoved.Clear();
         }
 
         public override void RegisterEvents()
         {
             CampaignEvents.OnSessionLaunchedEvent.AddNonSerializedListener(this, OnSessionLaunched);
+            CampaignEvents.OnAfterSessionLaunchedEvent.AddNonSerializedListener(this, OnAfterSessionLaunched);
+            CampaignEvents.DailyTickEvent.AddNonSerializedListener(this, OnDailyTick);
             CampaignEvents.DailyTickSettlementEvent.AddNonSerializedListener(this, OnDailySettlement);
             CampaignEvents.SettlementEntered.AddNonSerializedListener(this, OnSettlementEntered);
             CampaignEvents.AfterSettlementEntered.AddNonSerializedListener(this, OnAfterSettlementEntered);
@@ -106,6 +114,8 @@ namespace CastleMarketTowns
                 _stockGrantData = SerializeIntMap(_stockGrants);
                 _producedStockData = SerializeIntMap(_producedStock);
                 _marketSnapshotData = SerializeMarketSnapshots();
+                _castleCompanionIds = SerializeSet(CastleCompanions.Sent);
+                _companionMoveData = SerializeFloatMap(CastleCompanions.LastMoved);
             }
 
             _preparedIds = SyncChunked(dataStore, "CastleMarketTowns_Prepared", _preparedIds);
@@ -120,6 +130,9 @@ namespace CastleMarketTowns
             _marketSnapshotData = SyncChunked(dataStore, "CastleMarketTowns_MarketSnapshots", _marketSnapshotData);
             _createdDailyBuildingIds = SyncChunked(dataStore, "CastleMarketTowns_CreatedDailyBuildings", _createdDailyBuildingIds);
             _ownershipVersion = SyncChunked(dataStore, "CastleMarketTowns_OwnershipVersion", _ownershipVersion);
+            _castleCompanionIds = SyncChunked(dataStore, "CastleMarketTowns_CastleCompanions", _castleCompanionIds);
+            _companionSeedVersion = SyncChunked(dataStore, "CastleMarketTowns_CompanionSeedVersion", _companionSeedVersion);
+            _companionMoveData = SyncChunked(dataStore, "CastleMarketTowns_CompanionMoves", _companionMoveData);
 
             if (dataStore.IsLoading)
             {
@@ -134,6 +147,8 @@ namespace CastleMarketTowns
                 LoadIntMap(_producedStockData, _producedStock);
                 LoadMarketSnapshots(_marketSnapshotData);
                 LoadSet(_createdDailyBuildingIds, CreatedDailyBuildings);
+                LoadSet(_castleCompanionIds, CastleCompanions.Sent);
+                LoadFloatMap(_companionMoveData, CastleCompanions.LastMoved);
                 if (_ownershipVersion != OwnershipVersion)
                 {
                     foreach (string settlementId in OwnedDailyDefaults)
@@ -149,7 +164,6 @@ namespace CastleMarketTowns
         {
             ExpandZeroSnapshots();
             ValidateOwnership();
-            AddMenus(starter);
             foreach (Settlement settlement in Settlement.All)
             {
                 if (!settlement.IsCastle || settlement.Town == null)
@@ -162,11 +176,33 @@ namespace CastleMarketTowns
                     Prepare(settlement, true);
                     Settlement current = settlement;
                     Step("measure the stock of", settlement, delegate { UpdateStockRatio(current, MarketTown(current)); });
+                    Step("name the merchants of", settlement, delegate { NameMerchants(current); });
                 }
                 else
                 {
                     Cleanup(settlement);
                 }
+            }
+        }
+
+        private void OnAfterSessionLaunched(CampaignGameStarter starter)
+        {
+            AddMenus(starter);
+        }
+
+        private void OnDailyTick()
+        {
+            try
+            {
+                CastleCompanions.DailyTick();
+                if (_companionSeedVersion != CompanionSeedVersion && CastleCompanions.TryInitialSeed())
+                {
+                    _companionSeedVersion = CompanionSeedVersion;
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.Print("Castle Market Towns could not move companions between towns and castles: " + exception.Message);
             }
         }
 
@@ -582,6 +618,22 @@ namespace CastleMarketTowns
             RemoveBrothel(settlement);
         }
 
+        private static int CastleMenuIndexOf(CampaignGameStarter starter, string optionId, int fallback)
+        {
+            int index = 0;
+            foreach (GameMenuOption option in starter.GetPresumedGameMenu("castle").MenuOptions)
+            {
+                if (option != null && option.IdString == optionId)
+                {
+                    return index;
+                }
+
+                index++;
+            }
+
+            return fallback;
+        }
+
         private void AddMenus(CampaignGameStarter starter)
         {
             if (_menusAdded)
@@ -590,9 +642,11 @@ namespace CastleMarketTowns
             }
 
             _menusAdded = true;
-            starter.AddGameMenuOption("castle", "castle_market_towns_tavern_district", "{=cmtTavern01}Visit the castle tavern", TavernDistrictCondition, TavernDistrictConsequence, false, 4, false, null);
-            starter.AddGameMenuOption("castle", "castle_market_towns_trade", "{=GmcgoiGy}Trade", TradeCondition, TradeConsequence, false, 5, false, null);
-            starter.AddGameMenuOption("castle", "castle_market_towns_recruit", "{=E31IJyqs}Recruit troops", RecruitCondition, RecruitConsequence, false, 6, false, null);
+            AddKeepMenu(starter);
+            starter.AddGameMenuOption("castle", "castle_market_towns_tavern_district", "{=cmtTavern01}Visit the castle tavern", TavernDistrictCondition, TavernDistrictConsequence, false, CastleMenuIndexOf(starter, "manage_production", 3), false, null);
+            starter.AddGameMenuOption("castle", "castle_market_towns_recruit", "{=E31IJyqs}Recruit troops", RecruitCondition, RecruitConsequence, false, CastleMenuIndexOf(starter, "open_stash", 5), false, null);
+            starter.AddGameMenuOption("castle", "castle_market_towns_trade", "{=GmcgoiGy}Trade", TradeCondition, TradeConsequence, false, CastleMenuIndexOf(starter, "open_stash", 6), false, null);
+            starter.AddGameMenuOption("castle", "castle_market_towns_smithy", "{=McHsHbH8}Enter smithy", SmithyCondition, SmithyConsequence, false, CastleMenuIndexOf(starter, "take_a_walk_around_the_castle", 9), false, null);
 
             starter.AddGameMenu(TavernMenuId, "{=cmtTavern02}You are in the castle tavern. Off-duty soldiers, traders and travellers share the benches.", TavernMenuInit, GameMenu.MenuOverlayType.SettlementWithBoth, GameMenu.MenuFlags.None, null);
             starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_tavern", "{=qcl3YTPh}Visit the tavern", TavernCondition, TavernConsequence, false, -1, false, null);
@@ -606,6 +660,357 @@ namespace CastleMarketTowns
         }
 
         private const string TavernMenuId = "castle_market_towns_tavern_menu";
+        private const string KeepMenuId = "castle_market_towns_keep_menu";
+        private const string KeepBribeMenuId = "castle_market_towns_keep_bribe";
+
+        private enum KeepEntry
+        {
+            Refused,
+            Bribe,
+            Open
+        }
+
+        // Towns keep the dungeon, garrison, stash and lord's hall behind "Go to the keep"; castles list them on the main menu.
+        private static void AddKeepMenu(CampaignGameStarter starter)
+        {
+            GameMenu castle = starter.GetPresumedGameMenu("castle");
+            starter.AddGameMenu(KeepMenuId, "{=!}{SETTLEMENT_INFO}", KeepMenuInit, GameMenu.MenuOverlayType.SettlementWithCharacters, GameMenu.MenuFlags.None, null);
+            int moved = 0;
+            moved += MoveToKeep(starter, castle, "castle_prison", "{=esSm5V6t}Go to the dungeon");
+            moved += MoveToKeep(starter, castle, "castle_prison_cheat", "{=pa7oiQb1}Go to the dungeon (Cheat)");
+            moved += MoveToKeep(starter, castle, "leave_troops_to_garrison", "{=7J9KNFTz}Donate troops to garrison");
+            moved += MoveToKeep(starter, castle, "manage_garrison", "{=QazTA60M}Manage garrison");
+            moved += MoveToKeep(starter, castle, "manage_production", "{=Ll1EJHXF}Manage castle");
+            moved += MoveToKeep(starter, castle, "open_stash", "{=xl4K9ecB}Open stash");
+            moved += MoveToKeep(starter, castle, "castle_lords_hall", "{=dv2ZNazN}Go to the lord's hall");
+            moved += MoveToKeep(starter, castle, "castle_lords_hall_cheat", "{=dl6YxNTT}Go to the lord's hall (Cheat)");
+            starter.AddGameMenuOption(KeepMenuId, "castle_market_towns_keep_back", "{=E1OwmQFb}Back", TavernBackCondition, TavernBackConsequence, true, -1, false, null);
+            if (moved == 0)
+            {
+                Debug.Print("Castle Market Towns found none of the castle keep options; the castle menu stays as it is.");
+                return;
+            }
+
+            starter.AddGameMenuOption("castle", "castle_market_towns_keep", "{=cmtKeep01}Go to the castle", KeepCondition, KeepConsequence, false, CastleMenuIndexOf(starter, "castle_prison", 0), false, null);
+            starter.AddGameMenu(KeepBribeMenuId, "{=yyz111nn}The guards say that they can't just let anyone in.", KeepBribeMenuInit, GameMenu.MenuOverlayType.SettlementWithCharacters, GameMenu.MenuFlags.None, null);
+            starter.AddGameMenuOption(KeepBribeMenuId, "castle_market_towns_keep_bribe_pay", "{=3lxq5fvI}Pay a {AMOUNT}{GOLD_ICON} bribe to enter the castle.", KeepBribeCondition, KeepBribeConsequence, false, -1, false, null);
+            starter.AddGameMenuOption(KeepBribeMenuId, "castle_market_towns_keep_bribe_back", "{=E1OwmQFb}Back", TavernBackCondition, TavernBackConsequence, true, -1, false, null);
+
+            RouteNextLocation(castle);
+            RouteNextLocation(starter.GetPresumedGameMenu("castle_dungeon"));
+            ShowCourtyardOnly(castle);
+            ShowCourtyardOnly(starter.GetPresumedGameMenu("town_wait_menus"));
+
+            foreach (GameMenuOption option in starter.GetPresumedGameMenu("castle_dungeon").MenuOptions)
+            {
+                if (option == null || option.IdString != "town_keep_dungeon_back")
+                {
+                    continue;
+                }
+
+                GameMenuOption.OnConsequenceDelegate back = option.OnConsequence;
+                option.OnConsequence = delegate(MenuCallbackArgs args)
+                {
+                    if (KeepAvailable(Settlement.CurrentSettlement))
+                    {
+                        GameMenu.SwitchToMenu(KeepMenuId);
+                    }
+                    else if (back != null)
+                    {
+                        back(args);
+                    }
+                };
+            }
+        }
+
+        // Walking between scenes passes through the menu that started the walk. The castle menu always returns to itself
+        // and the castle dungeon sends the hall and dungeon to the town keep menu.
+        private static void RouteNextLocation(GameMenu menu)
+        {
+            OnInitDelegate init = menu.OnInit;
+            string menuId = menu.StringId;
+            menu.OnInit = delegate(MenuCallbackArgs args)
+            {
+                GameMenuManager menuManager = Campaign.Current.GameMenuManager;
+                string next = null;
+                if (menuManager.NextLocation != null && PlayerEncounter.LocationEncounter != null && KeepAvailable(Settlement.CurrentSettlement))
+                {
+                    next = MenuForLocation(menuManager.NextLocation.StringId);
+                }
+
+                if (init != null)
+                {
+                    init(args);
+                }
+
+                if (next != null && next != menuId)
+                {
+                    menuManager.SetNextMenu(next);
+                }
+            };
+        }
+
+        // The settlement overlay lists everyone in the menu's locations and lets the player talk to them. The base game puts
+        // the lord's hall on the castle and castle waiting menus, which would let visitors reach the lords without passing the keep.
+        private static void ShowCourtyardOnly(GameMenu menu)
+        {
+            OnInitDelegate init = menu.OnInit;
+            menu.OnInit = delegate(MenuCallbackArgs args)
+            {
+                if (init != null)
+                {
+                    init(args);
+                }
+
+                if (KeepAvailable(Settlement.CurrentSettlement))
+                {
+                    Campaign.Current.GameMenuManager.MenuLocations.RemoveAll(location => location != null && location.StringId == "lordshall");
+                }
+            };
+        }
+
+        private static int MoveToKeep(CampaignGameStarter starter, GameMenu castle, string id, string text)
+        {
+            GameMenuOption vanilla = null;
+            foreach (GameMenuOption option in castle.MenuOptions)
+            {
+                if (option != null && option.IdString == id)
+                {
+                    vanilla = option;
+                    break;
+                }
+            }
+
+            if (vanilla == null)
+            {
+                return 0;
+            }
+
+            GameMenuOption.OnConditionDelegate condition = vanilla.OnCondition;
+            GameMenuOption.OnConsequenceDelegate consequence = vanilla.OnConsequence;
+            if (consequence == null && id == "manage_production")
+            {
+                consequence = delegate(MenuCallbackArgs args) { args.MenuContext.OpenTownManagement(); };
+            }
+
+            starter.AddGameMenuOption(KeepMenuId, id, text, condition, consequence, vanilla.IsLeave, -1, vanilla.IsRepeatable, vanilla.RelatedObject);
+            vanilla.OnCondition = delegate(MenuCallbackArgs args)
+            {
+                return !KeepAvailable(Settlement.CurrentSettlement) && (condition == null || condition(args));
+            };
+            return 1;
+        }
+
+        internal static bool KeepAvailable(Settlement settlement)
+        {
+            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
+            return settings != null && settings.Enabled && settlement != null && AppliesTo(settlement);
+        }
+
+        private static bool KeepCondition(MenuCallbackArgs args)
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            if (!KeepAvailable(settlement))
+            {
+                return false;
+            }
+
+            args.optionLeaveType = GameMenuOption.LeaveType.Submenu;
+            SetKeepQuestMarkers(args, settlement, "lordshall", "prison");
+            SettlementAccessModel.AccessDetails access;
+            if (EntryToKeep(settlement, out access) == KeepEntry.Refused)
+            {
+                args.IsEnabled = false;
+                args.Tooltip = access.AccessLimitationReason == SettlementAccessModel.AccessLimitationReason.LocationEmpty ? new TextObject("{=cojKmfSk}There is no one inside.") : new TextObject("{=h9i9VXLd}You cannot enter an enemy lord's hall.");
+            }
+
+            return true;
+        }
+
+        private static void KeepConsequence(MenuCallbackArgs args)
+        {
+            SettlementAccessModel.AccessDetails access;
+            KeepEntry entry = EntryToKeep(Settlement.CurrentSettlement, out access);
+            if (entry == KeepEntry.Open)
+            {
+                GameMenu.SwitchToMenu(KeepMenuId);
+            }
+            else if (entry == KeepEntry.Bribe)
+            {
+                GameMenu.SwitchToMenu(KeepBribeMenuId);
+            }
+        }
+
+        // The town keep's rules: the lord's hall access decides, and a bribe that is already paid off lets the player in.
+        private static KeepEntry EntryToKeep(Settlement settlement, out SettlementAccessModel.AccessDetails access)
+        {
+            access = default(SettlementAccessModel.AccessDetails);
+            if (settlement == null)
+            {
+                return KeepEntry.Refused;
+            }
+
+            Campaign.Current.Models.SettlementAccessModel.CanMainHeroEnterLordsHall(settlement, out access);
+            if (access.AccessLevel == SettlementAccessModel.AccessLevel.FullAccess)
+            {
+                return KeepEntry.Open;
+            }
+
+            if (access.AccessLevel == SettlementAccessModel.AccessLevel.LimitedAccess && access.LimitedAccessSolution == SettlementAccessModel.LimitedAccessSolution.Bribe)
+            {
+                return Campaign.Current.Models.BribeCalculationModel.GetBribeToEnterLordsHall(settlement) > 0 ? KeepEntry.Bribe : KeepEntry.Open;
+            }
+
+            return KeepEntry.Refused;
+        }
+
+        private static void SetKeepQuestMarkers(MenuCallbackArgs args, Settlement settlement, params string[] locationIds)
+        {
+            if (settlement.LocationComplex == null)
+            {
+                return;
+            }
+
+            List<Location> locations = new List<Location>();
+            foreach (string id in locationIds)
+            {
+                Location location = settlement.LocationComplex.GetLocationWithId(id);
+                if (location != null)
+                {
+                    locations.Add(location);
+                }
+            }
+
+            MenuHelper.SetIssueAndQuestDataForLocations(args, locations);
+        }
+
+        private static void KeepBribeMenuInit(MenuCallbackArgs args)
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            args.MenuTitle = new TextObject("{=723ig40Q}Keep");
+            if (settlement == null)
+            {
+                return;
+            }
+
+            args.MenuContext.SetBackgroundMeshName(settlement.SettlementComponent.WaitMeshName);
+            args.MenuContext.SetAmbientSound("event:/map/ambient/node/settlements/2d/keep");
+            Campaign.Current.GameMenuManager.MenuLocations.Clear();
+            SettlementAccessModel.AccessDetails access;
+            if (KeepAvailable(settlement) && EntryToKeep(settlement, out access) == KeepEntry.Open)
+            {
+                GameMenu.ActivateGameMenu(KeepMenuId);
+            }
+        }
+
+        private static bool KeepBribeCondition(MenuCallbackArgs args)
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            SettlementAccessModel.AccessDetails access;
+            if (!KeepAvailable(settlement) || EntryToKeep(settlement, out access) != KeepEntry.Bribe)
+            {
+                return false;
+            }
+
+            int bribe = Campaign.Current.Models.BribeCalculationModel.GetBribeToEnterLordsHall(settlement);
+            MBTextManager.SetTextVariable("AMOUNT", bribe);
+            SetKeepQuestMarkers(args, settlement, "lordshall");
+            args.optionLeaveType = GameMenuOption.LeaveType.Mission;
+            if (Hero.MainHero.Gold < bribe)
+            {
+                args.Tooltip = new TextObject("{=d0kbtGYn}You don't have enough gold.");
+                args.IsEnabled = false;
+            }
+
+            return true;
+        }
+
+        private static void KeepBribeConsequence(MenuCallbackArgs args)
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            int bribe = Campaign.Current.Models.BribeCalculationModel.GetBribeToEnterLordsHall(settlement);
+            if (bribe > 0)
+            {
+                BribeGuardsAction.Apply(settlement, bribe);
+            }
+
+            GameMenu.SwitchToMenu(KeepMenuId);
+        }
+
+        private static void KeepMenuInit(MenuCallbackArgs args)
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            args.MenuTitle = new TextObject("{=723ig40Q}Keep");
+            if (settlement == null)
+            {
+                return;
+            }
+
+            try
+            {
+                MethodInfo introduction = AccessTools.Method(typeof(PlayerTownVisitCampaignBehavior), "SetIntroductionText");
+                if (introduction != null)
+                {
+                    introduction.Invoke(null, new object[] { settlement, true });
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.Print("Castle Market Towns could not describe the castle keep: " + exception.Message);
+            }
+
+            if (settlement.Culture != null)
+            {
+                args.MenuContext.SetBackgroundMeshName(settlement.Culture.StringId + "_keep");
+            }
+
+            args.MenuContext.SetPanelSound("event:/ui/panels/settlement_keep");
+            args.MenuContext.SetAmbientSound("event:/map/ambient/node/settlements/2d/keep");
+
+            GameMenuManager menuManager = Campaign.Current.GameMenuManager;
+            Location hall = settlement.LocationComplex == null ? null : settlement.LocationComplex.GetLocationWithId("lordshall");
+            menuManager.MenuLocations.Clear();
+            if (hall != null)
+            {
+                menuManager.MenuLocations.Add(hall);
+            }
+
+            OpenNextLocation(menuManager, KeepMenuId);
+        }
+
+        private static void OpenNextLocation(GameMenuManager menuManager, string currentMenu)
+        {
+            if (menuManager.NextLocation == null || PlayerEncounter.LocationEncounter == null)
+            {
+                return;
+            }
+
+            string next = MenuForLocation(menuManager.NextLocation.StringId);
+            PlayerEncounter.LocationEncounter.CreateAndOpenMissionController(menuManager.NextLocation, menuManager.PreviousLocation, null, null);
+            if (next != currentMenu)
+            {
+                menuManager.SetNextMenu(next);
+            }
+
+            menuManager.NextLocation = null;
+            menuManager.PreviousLocation = null;
+        }
+
+        private static string MenuForLocation(string locationId)
+        {
+            Settlement settlement = Settlement.CurrentSettlement;
+            if (locationId == "tavern" && TavernAvailable(settlement))
+            {
+                return TavernMenuId;
+            }
+
+            if ((locationId == "lordshall" || locationId == "prison") && KeepAvailable(settlement))
+            {
+                return KeepMenuId;
+            }
+
+            return "castle";
+        }
 
         private static void AddHotButterOption(CampaignGameStarter starter, string id, string text, string handler)
         {
@@ -651,18 +1056,7 @@ namespace CastleMarketTowns
                 menuManager.MenuLocations.Add(tavern);
             }
 
-            if (menuManager.NextLocation != null && PlayerEncounter.LocationEncounter != null)
-            {
-                string next = menuManager.NextLocation.StringId;
-                PlayerEncounter.LocationEncounter.CreateAndOpenMissionController(menuManager.NextLocation, menuManager.PreviousLocation, null, null);
-                if (next != "tavern")
-                {
-                    menuManager.SetNextMenu("castle");
-                }
-
-                menuManager.NextLocation = null;
-                menuManager.PreviousLocation = null;
-            }
+            OpenNextLocation(menuManager, TavernMenuId);
         }
 
         private static bool RansomCondition(MenuCallbackArgs args, string vanillaCondition)
@@ -878,6 +1272,27 @@ namespace CastleMarketTowns
         {
             args.MenuContext.OpenRecruitVolunteers();
             args.MenuContext.SetPanelSound("event:/ui/panels/panel_settlement_enter_recruit");
+        }
+
+        private static bool SmithyCondition(MenuCallbackArgs args)
+        {
+            args.optionLeaveType = GameMenuOption.LeaveType.Craft;
+            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
+            Settlement settlement = Settlement.CurrentSettlement;
+            if (settings == null || !settings.Enabled || !settings.CastleSmithy || settlement == null || !AppliesTo(settlement) || !CastleSmithyGuard.Ready)
+            {
+                return false;
+            }
+
+            bool disabled = false;
+            TextObject reason = TextObject.GetEmpty();
+            bool canCraft = Campaign.Current.Models.SettlementAccessModel.CanMainHeroDoSettlementAction(settlement, SettlementAccessModel.SettlementAction.Craft, out disabled, out reason);
+            return MenuHelper.SetOptionProperties(args, canCraft, disabled, reason);
+        }
+
+        private static void SmithyConsequence(MenuCallbackArgs args)
+        {
+            CraftingHelper.OpenCrafting(CraftingTemplate.All[0]);
         }
 
         internal static bool RecruitsAvailable(Settlement settlement)
@@ -1123,6 +1538,30 @@ namespace CastleMarketTowns
             }
         }
 
+        // Merchants created before castle merchants were given titles still carry only their first name.
+        private static void NameMerchants(Settlement settlement)
+        {
+            MethodInfo fullName = AccessTools.Method(typeof(NameGenerator), "GenerateHeroFullName");
+            if (fullName == null || NameGenerator.Current == null)
+            {
+                return;
+            }
+
+            foreach (Hero hero in settlement.Notables)
+            {
+                if (hero == null || !hero.IsAlive || !hero.IsMerchant || hero.HomeSettlement != settlement || hero.Name == null || hero.FirstName == null || hero.Name.ToString() != hero.FirstName.ToString())
+                {
+                    continue;
+                }
+
+                TextObject name = fullName.Invoke(NameGenerator.Current, new object[] { hero, hero.FirstName, true }) as TextObject;
+                if (name != null && name.ToString() != hero.FirstName.ToString())
+                {
+                    hero.SetName(name, hero.FirstName);
+                }
+            }
+        }
+
         private static int CountNotables(Settlement settlement, Occupation occupation)
         {
             int count = 0;
@@ -1274,14 +1713,39 @@ namespace CastleMarketTowns
 
                 if (heir == null)
                 {
-                    return;
+                    RemoveWorkshop(settlement, workshops[i]);
+                    continue;
                 }
 
                 ChangeOwnerOfWorkshopAction.ApplyByDeath(workshops[i], heir);
             }
         }
 
-        private static Settlement NearestTown(Settlement from)
+        private static void RemoveWorkshop(Settlement settlement, Workshop workshop)
+        {
+            Town town = settlement.Town;
+            if (town == null || town.Workshops == null || !CanRemoveWorkshop(workshop))
+            {
+                return;
+            }
+
+            List<Workshop> kept = new List<Workshop>(town.Workshops);
+            if (!kept.Remove(workshop))
+            {
+                return;
+            }
+
+            DetachWorkshop(workshop);
+            SetWorkshops(town, kept);
+        }
+
+        private static void SetWorkshops(Town town, List<Workshop> workshops)
+        {
+            MethodInfo setter = typeof(Town).GetProperty("Workshops", BindingFlags.Instance | BindingFlags.Public).GetSetMethod(true);
+            setter.Invoke(town, new object[] { workshops.ToArray() });
+        }
+
+        internal static Settlement NearestTown(Settlement from)
         {
             return NearestTown(from, MobileParty.NavigationType.Default) ?? NearestTown(from, MobileParty.NavigationType.All);
         }
@@ -1392,8 +1856,7 @@ namespace CastleMarketTowns
                 return;
             }
 
-            MethodInfo setter = typeof(Town).GetProperty("Workshops", BindingFlags.Instance | BindingFlags.Public).GetSetMethod(true);
-            setter.Invoke(town, new object[] { kept.ToArray() });
+            SetWorkshops(town, kept);
         }
 
         private static void AssignWorkshops(Settlement settlement)
