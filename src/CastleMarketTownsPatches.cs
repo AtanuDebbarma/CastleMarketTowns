@@ -12,6 +12,7 @@ using TaleWorlds.CampaignSystem.GameComponents;
 using TaleWorlds.CampaignSystem.Issues;
 using TaleWorlds.CampaignSystem.Settlements.Buildings;
 using TaleWorlds.CampaignSystem.Party;
+using TaleWorlds.CampaignSystem.Roster;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Localization;
 
@@ -248,6 +249,139 @@ namespace CastleMarketTowns
             }
 
             return !CastleMarketTownsBehavior.RecruitsAvailable(settlement) || !CastleMarketTownsBehavior.RecruiterAllowed(party);
+        }
+    }
+
+    // Lords far from their own lands also consider neutral towns and villages to visit; covered castles join them.
+    [HarmonyPatch(typeof(TaleWorlds.CampaignSystem.CampaignBehaviors.AiBehaviors.AiVisitSettlementBehavior), "FillSettlementsToVisitWithDistancesAsDays")]
+    internal static class CastleNeutralVisitPatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return SettlementGetter.Redirect(instructions, "get_IsCastle", typeof(CastleNeutralVisitPatch), "SkipsNeutralCastle");
+        }
+
+        public static bool SkipsNeutralCastle(Settlement settlement)
+        {
+            return settlement != null && settlement.IsCastle && !CastleTownRules.Covered(settlement);
+        }
+    }
+
+    // The base game plans trips to buy food only to towns and villages, and to sell loot only to towns.
+    [HarmonyPatch(typeof(TaleWorlds.CampaignSystem.CampaignBehaviors.AiBehaviors.AiVisitSettlementBehavior), "AiHourlyTick")]
+    internal static class CastleMarketVisitPatch
+    {
+        private const int MinimumSpareFood = 10;
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+            List<int> isTown = new List<int>();
+            for (int i = 0; i < codes.Count; i++)
+            {
+                MethodInfo called = codes[i].operand as MethodInfo;
+                if (called != null && called.Name == "get_IsTown" && called.DeclaringType == typeof(Settlement))
+                {
+                    isTown.Add(i);
+                }
+            }
+
+            // Two food checks, then the loot check.
+            if (isTown.Count != 3)
+            {
+                Debug.Print("Castle Market Towns expected 3 town checks in AiVisitSettlementBehavior.AiHourlyTick and found " + isTown.Count + "; lords will not plan castle market visits.");
+                return codes;
+            }
+
+            string[] helpers = { "BuysFoodAsTown", "BuysFoodAsTown", "SellsLootAsTown" };
+            for (int i = 0; i < 3; i++)
+            {
+                codes[isTown[i]].opcode = OpCodes.Call;
+                codes[isTown[i]].operand = AccessTools.Method(typeof(CastleMarketVisitPatch), helpers[i]);
+            }
+
+            // The food score weighs the settlement's whole food stock; a castle only sells what lies above its reserve.
+            MethodInfo itemRoster = AccessTools.PropertyGetter(typeof(Settlement), "ItemRoster");
+            MethodInfo totalFood = AccessTools.PropertyGetter(typeof(ItemRoster), "TotalFood");
+            List<int> foodStock = new List<int>();
+            for (int i = 0; itemRoster != null && totalFood != null && i + 1 < codes.Count; i++)
+            {
+                if (codes[i].Calls(itemRoster) && codes[i + 1].Calls(totalFood))
+                {
+                    foodStock.Add(i);
+                }
+            }
+
+            if (foodStock.Count == 1 && codes[foodStock[0] + 1].labels.Count == 0)
+            {
+                codes[foodStock[0]].opcode = OpCodes.Call;
+                codes[foodStock[0]].operand = AccessTools.Method(typeof(CastleMarketVisitPatch), "FoodForSale");
+                codes[foodStock[0] + 1].opcode = OpCodes.Nop;
+                codes[foodStock[0] + 1].operand = null;
+            }
+            else
+            {
+                Debug.Print("Castle Market Towns expected 1 food stock check in AiVisitSettlementBehavior.AiHourlyTick and found " + foodStock.Count + "; lords weigh a castle's whole food stock when planning to buy food there.");
+            }
+
+            return codes;
+        }
+
+        public static int FoodForSale(Settlement settlement)
+        {
+            if (settlement == null || settlement.ItemRoster == null)
+            {
+                return 0;
+            }
+
+            return settlement.IsCastle ? CastleTownRules.SpareFood(settlement) : settlement.ItemRoster.TotalFood;
+        }
+
+        public static bool BuysFoodAsTown(Settlement settlement)
+        {
+            if (settlement == null)
+            {
+                return false;
+            }
+
+            return settlement.IsTown || (CastleTownRules.SellsFoodAsTown(settlement) && CastleTownRules.SpareFood(settlement) >= MinimumSpareFood);
+        }
+
+        public static bool SellsLootAsTown(Settlement settlement)
+        {
+            return CastleLootSalePatch.SellsLootAsTown(settlement);
+        }
+    }
+
+    [HarmonyPatch(typeof(PartiesSellLootCampaignBehavior), "OnSettlementEntered")]
+    internal static class CastleLootSalePatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return SettlementGetter.Redirect(instructions, "get_IsTown", typeof(CastleLootSalePatch), "SellsLootAsTown");
+        }
+
+        public static bool SellsLootAsTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || CastleTownRules.Covered(settlement));
+        }
+    }
+
+    [HarmonyPatch(typeof(TradeAgreementsCampaignBehavior), "SettlementEntered")]
+    internal static class CastleTradeAgreementPatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return SettlementGetter.Redirect(instructions, "get_IsTown", typeof(CastleCaravanStops), "IsStop");
+        }
+    }
+
+    [HarmonyPatch(typeof(TradeRumorsCampaignBehavior), "OnSettlementEntered")]
+    internal static class CastleTradeRumorPatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return SettlementGetter.Redirect(instructions, "get_IsTown", typeof(CastleTownRules), "MarketRulesAsTown");
         }
     }
 
@@ -1108,15 +1242,17 @@ namespace CastleMarketTowns
                 return;
             }
 
+            // Must match the port choice the trade score was computed with, or a castle with a port can come back unreachable.
+            bool targetsPort = CastleCaravanStops.TargetsPort(caravanParty.HasNavalNavigationCapability, __result);
             float distance;
             AiHelper.GetBestNavigationTypeAndAdjustedDistanceOfSettlementForMobileParty(
                 caravanParty,
                 settlement,
-                false,
+                targetsPort,
                 out bestNavigationType,
                 out distance,
                 out isFromPort);
-            isTargetingPort = false;
+            isTargetingPort = targetsPort;
             if (bestNavigationType == MobileParty.NavigationType.None)
             {
                 __result = null;

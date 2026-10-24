@@ -26,7 +26,7 @@ namespace CastleMarketTowns
 {
     public class CastleMarketTownsBehavior : CampaignBehaviorBase
     {
-        private const string WorkshopTagPrefix = "castle_market_town_workshop_";
+        internal const string WorkshopTagPrefix = "castle_market_town_workshop_";
         private const string ZeroSnapshotMarker = "*";
         private const string FestivalRole = "festival";
         private const string IrrigationRole = "irrigation";
@@ -216,6 +216,11 @@ namespace CastleMarketTowns
             if (!AppliesTo(settlement))
             {
                 Cleanup(settlement);
+                if (HasRunnableWorkshops(settlement.Town))
+                {
+                    RunOfficialTownDailyTick(typeof(WorkshopsCampaignBehavior), settlement.Town);
+                }
+
                 return;
             }
 
@@ -620,8 +625,13 @@ namespace CastleMarketTowns
 
         private static int CastleMenuIndexOf(CampaignGameStarter starter, string optionId, int fallback)
         {
+            return MenuIndexOf(starter, "castle", optionId, fallback);
+        }
+
+        private static int MenuIndexOf(CampaignGameStarter starter, string menuId, string optionId, int fallback)
+        {
             int index = 0;
-            foreach (GameMenuOption option in starter.GetPresumedGameMenu("castle").MenuOptions)
+            foreach (GameMenuOption option in starter.GetPresumedGameMenu(menuId).MenuOptions)
             {
                 if (option != null && option.IdString == optionId)
                 {
@@ -647,6 +657,7 @@ namespace CastleMarketTowns
             starter.AddGameMenuOption("castle", "castle_market_towns_recruit", "{=E31IJyqs}Recruit troops", RecruitCondition, RecruitConsequence, false, CastleMenuIndexOf(starter, "open_stash", 5), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_trade", "{=GmcgoiGy}Trade", TradeCondition, TradeConsequence, false, CastleMenuIndexOf(starter, "open_stash", 6), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_smithy", "{=McHsHbH8}Enter smithy", SmithyCondition, SmithyConsequence, false, CastleMenuIndexOf(starter, "take_a_walk_around_the_castle", 9), false, null);
+            starter.AddGameMenuOption("castle", "castle_market_towns_warehouse", "{=LK4kNZkb}Enter the warehouse", CastleWorkshops.WarehouseCondition, CastleWorkshops.WarehouseConsequence, false, CastleMenuIndexOf(starter, "open_stash", 7), false, null);
 
             starter.AddGameMenu(TavernMenuId, "{=cmtTavern02}You are in the castle tavern. Off-duty soldiers, traders and travellers share the benches.", TavernMenuInit, GameMenu.MenuOverlayType.SettlementWithBoth, GameMenu.MenuFlags.None, null);
             starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_tavern", "{=qcl3YTPh}Visit the tavern", TavernCondition, TavernConsequence, false, -1, false, null);
@@ -691,6 +702,7 @@ namespace CastleMarketTowns
                 return;
             }
 
+            MoveImprovedGarrisonsToKeep(starter, castle);
             starter.AddGameMenuOption("castle", "castle_market_towns_keep", "{=cmtKeep01}Go to the castle", KeepCondition, KeepConsequence, false, CastleMenuIndexOf(starter, "castle_prison", 0), false, null);
             starter.AddGameMenu(KeepBribeMenuId, "{=yyz111nn}The guards say that they can't just let anyone in.", KeepBribeMenuInit, GameMenu.MenuOverlayType.SettlementWithCharacters, GameMenu.MenuFlags.None, null);
             starter.AddGameMenuOption(KeepBribeMenuId, "castle_market_towns_keep_bribe_pay", "{=3lxq5fvI}Pay a {AMOUNT}{GOLD_ICON} bribe to enter the castle.", KeepBribeCondition, KeepBribeConsequence, false, -1, false, null);
@@ -799,6 +811,33 @@ namespace CastleMarketTowns
                 return !KeepAvailable(Settlement.CurrentSettlement) && (condition == null || condition(args));
             };
             return 1;
+        }
+
+        // Improved Garrisons adds its button to the castle menu but to Go to the keep in towns, right after the dungeon.
+        private static void MoveImprovedGarrisonsToKeep(CampaignGameStarter starter, GameMenu castle)
+        {
+            List<GameMenuOption> options = new List<GameMenuOption>();
+            foreach (GameMenuOption option in castle.MenuOptions)
+            {
+                if (option != null && option.IdString == CastleImprovedGarrisons.MenuOptionId)
+                {
+                    options.Add(option);
+                }
+            }
+
+            int index = MenuIndexOf(starter, KeepMenuId, "leave_troops_to_garrison", 1);
+            foreach (GameMenuOption option in options)
+            {
+                GameMenuOption.OnConditionDelegate condition = option.OnCondition;
+                starter.AddGameMenuOption(KeepMenuId, option.IdString, option.Text.ToString(), delegate(MenuCallbackArgs args)
+                {
+                    return CastleImprovedGarrisons.Active && (condition == null || condition(args));
+                }, option.OnConsequence, option.IsLeave, index++, option.IsRepeatable, option.RelatedObject);
+                option.OnCondition = delegate(MenuCallbackArgs args)
+                {
+                    return !(CastleImprovedGarrisons.Active && KeepAvailable(Settlement.CurrentSettlement)) && (condition == null || condition(args));
+                };
+            }
         }
 
         internal static bool KeepAvailable(Settlement settlement)
@@ -1348,6 +1387,7 @@ namespace CastleMarketTowns
                 Step("add notables to", settlement, delegate { EnsureNotables(settlement, settings); });
                 Step("resize the workshops of", settlement, delegate { ResizeWorkshops(settlement, HasWorkshopOwners(settlement) ? Clamp(settings.WorkshopCount, 0, 4) : 0); });
                 Step("assign the workshops of", settlement, delegate { AssignWorkshops(settlement); });
+                Step("bring back the workshops of", settlement, delegate { ReclaimWorkshops(settlement); });
             }
 
             Step("open the market of", settlement, delegate { EnsureMarket(settlement, settings); });
@@ -1364,6 +1404,7 @@ namespace CastleMarketTowns
             Step("restore the projects of", settlement, delegate { SyncCastleProjects(settlement); });
             Step("remove the brothel from", settlement, delegate { RemoveBrothel(settlement); });
             Step("remove the tavern from", settlement, delegate { RemoveTavern(settlement); });
+            Step("sell your workshops in", settlement, delegate { CastleWorkshops.SellPlayerWorkshops(settlement); });
             Step("remove the workshops of", settlement, delegate { ResizeWorkshops(settlement, 0); });
             Step("move notables out of", settlement, delegate { RelocateNotables(settlement, 0, 0); });
             Step("sell the leftover goods of", settlement, delegate { SellProducedLeftovers(settlement); });
@@ -1718,6 +1759,44 @@ namespace CastleMarketTowns
                 }
 
                 ChangeOwnerOfWorkshopAction.ApplyByDeath(workshops[i], heir);
+            }
+        }
+
+        // A castle workshop that found no notable in the castle went to a notable of the nearest town; return it once the castle has merchants or artisans again.
+        private static void ReclaimWorkshops(Settlement settlement)
+        {
+            Town town = settlement.Town;
+            if (town == null || town.Workshops == null)
+            {
+                return;
+            }
+
+            foreach (Workshop workshop in town.Workshops)
+            {
+                Hero owner = workshop == null ? null : workshop.Owner;
+                if (!CanRemoveWorkshop(workshop) || owner == null || !owner.IsAlive || owner.CurrentSettlement == settlement || owner.HomeSettlement == settlement)
+                {
+                    continue;
+                }
+
+                Hero heir = null;
+                foreach (Hero notable in settlement.Notables)
+                {
+                    if (notable == null || !notable.IsAlive || notable.CurrentSettlement != settlement || (notable.Occupation != Occupation.Merchant && notable.Occupation != Occupation.Artisan))
+                    {
+                        continue;
+                    }
+
+                    if (heir == null || notable.OwnedWorkshops.Count < heir.OwnedWorkshops.Count)
+                    {
+                        heir = notable;
+                    }
+                }
+
+                if (heir != null)
+                {
+                    ChangeOwnerOfWorkshopAction.ApplyByDeath(workshop, heir);
+                }
             }
         }
 
@@ -2168,6 +2247,25 @@ namespace CastleMarketTowns
             RunOfficialTownDailyTick(typeof(WorkshopsCampaignBehavior), town);
         }
 
+        // Mod workshops that cleanup could not sell or remove still produce and pay wages, as they would in a town. Another mod's are left to it.
+        private static bool HasRunnableWorkshops(Town town)
+        {
+            if (town == null || town.Workshops == null || town.Workshops.Length == 0)
+            {
+                return false;
+            }
+
+            foreach (Workshop workshop in town.Workshops)
+            {
+                if (workshop == null || workshop.Owner == null || workshop.WorkshopType == null || string.IsNullOrEmpty(workshop.Tag) || !workshop.Tag.StartsWith(WorkshopTagPrefix, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private static void RunOfficialTownDailyTick(Type behaviorType, Town town)
         {
             try
@@ -2239,6 +2337,7 @@ namespace CastleMarketTowns
                 return;
             }
 
+            DropDetachedProjects(settlement.Town, marketplace);
             if (CastleProjectsOverridden(settlement))
             {
                 EnsureProject(settlement, marketplace);
@@ -2328,6 +2427,24 @@ namespace CastleMarketTowns
             RemoveFromQueue(town, owned);
             OwnedMarketplaces.Remove(settlement.StringId);
             MarketplaceBuildings.Remove(settlement.StringId);
+        }
+
+        // A project screen left open while the Marketplace was removed can still queue the removed building.
+        private static void DropDetachedProjects(Town town, BuildingType buildingType)
+        {
+            Queue<Building> queue = town.BuildingsInProgress as Queue<Building>;
+            if (queue == null)
+            {
+                return;
+            }
+
+            foreach (Building building in queue.ToArray())
+            {
+                if (building != null && building.BuildingType == buildingType && !town.Buildings.Contains(building))
+                {
+                    RemoveFromQueue(town, building);
+                }
+            }
         }
 
         private static void RemoveFromQueue(Town town, Building building)

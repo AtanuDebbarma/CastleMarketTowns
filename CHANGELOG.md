@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.2.0
+
+- Workshops you own in castles appear in the clan screen's **Other** tab next to your town workshops, with the same status, capital and wage details, warehouse settings (**Get Input from the Warehouse** and **Store Outputs in the Warehouse**) and **Manage Workshop** options to change production or sell. Before, they were counted toward your workshop limit but never listed.
+- Castles where you own a workshop get **Enter the warehouse** in the castle menu, the same warehouse screen and capacity as in towns.
+- When a castle stops being covered, because **Enable castle markets** or an **Apply to** switch is turned off or the castle passes to a clan those switches leave out, workshops you own there are sold to one of its notables at the base game's price before the notables leave, or to a notable of the nearest town if none is left. Their warehouse goods go to your party if you are in the castle, to the castle stash if your clan owns it, and are otherwise sold at the castle's price. Before, those workshops stayed yours but stopped running and could not be sold.
+- A notable's tooltip lists the workshops they own in castles as well as in towns.
+- New MCM setting **Extra workshop limit** (People and workshops, 0 to 10, default 0). It adds to the base game's limit of clan tier + 1 workshops, which castle and town workshops share. Raising it mid-campaign takes effect at once, warehouses included.
+- Improved Garrisons support, without requiring it or changing its files. In covered castles its button moves into **Go to the castle**, after the dungeon, as it sits in **Go to the keep** in towns. Its project tooltips show the castle Marketplace tariff and the Castellan's Office tax. Its recruiter, patrol and mobile garrison parties treat covered castles like towns: they recruit from castle merchants and artisans, sell loot and buy horses in the castle market. New MCM switch **Improved Garrisons support** (General, on by default) turns all three off. Without Improved Garrisons nothing is patched.
+- A castle Marketplace that was queued for construction after the castle stopped being covered is taken out of the queue the next day.
+- AI lords sell their loot in castle markets and plan trips to castles to buy food, as they do with towns. They only head to a castle for food when it has some to spare above the castle's own reserve, and judge the trip by that spare food alone, not the whole stock.
+- Lords far from their own lands consider covered castles of other kingdoms as places to visit, as they already did with neutral towns and villages.
+- When a castle workshop changes hands, through bankruptcy, its owner's death, a sale or war, and the base game finds no buyer in the castle, any other notable of the castle takes it. With none left, a bankrupt owner keeps it with fresh capital; otherwise a notable of the nearest town takes it over until the castle has merchants or artisans again, and it returns to one of them on the castle's next daily update, or is removed with the other mod workshops if the castle is no longer covered. Before, this could throw an error with only one notable in the castle.
+- Mod workshops left in a castle that stops being covered, because nobody could buy them, keep producing and paying wages. Workshops another mod added there are left to that mod.
+- Caravans trading at castles count toward trade agreements, and trade rumours and the base game's workshop incidents include castles.
+- War Sails: caravans heading to a castle with a port no longer wait in place when the castle is their best destination.
+
 ## 1.1.0
 
 - Castles gain a smithy. **Enter smithy** in the castle menu opens the same smithy screen as in towns, for smithing, smelting and refining with your own materials. Smithing orders stay in towns, so the castle smithy shows none. It has its own MCM switch, **Castle smithy**, on by default.

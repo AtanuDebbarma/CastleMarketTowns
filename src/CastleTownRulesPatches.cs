@@ -85,6 +85,11 @@ namespace CastleMarketTowns
             return settlement != null && (settlement.IsTown || Covered(settlement));
         }
 
+        public static bool ImprovedGarrisonsTradesAsTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || (CastleImprovedGarrisons.Active && Covered(settlement)));
+        }
+
         public static bool RulingIncomeAsTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || (Covered(settlement) && settlement.Town.Workshops != null));
@@ -103,6 +108,12 @@ namespace CastleMarketTowns
         public static bool RepairsAsTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || ((Settings == null || Settings.CastleRepair) && Covered(settlement)));
+        }
+
+        // For screens that only list workshops: every castle with workshop slots, covered or not, so the player's never vanish.
+        public static bool ListsWorkshopsAsTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || (settlement.IsCastle && settlement.Town != null && settlement.Town.Workshops != null));
         }
 
         public static bool WorkshopsAsTown(Settlement settlement)
@@ -154,6 +165,56 @@ namespace CastleMarketTowns
         public static bool MarketProsperityAsTown(SettlementComponent component)
         {
             return component != null && (component.IsTown || (Settings != null && Settings.TradeProsperityPercent > 0 && Covered(component.Settlement)));
+        }
+
+        private static readonly Dictionary<Settlement, int> _spareFood = new Dictionary<Settlement, int>();
+        private static long _spareFoodHour = -1;
+
+        // Food lords can buy above the castle's reserve. Lords weigh every settlement around them each hour, so it is cached per hour.
+        public static int SpareFood(Settlement settlement)
+        {
+            if (settlement == null || settlement.ItemRoster == null)
+            {
+                return 0;
+            }
+
+            long hour = (long)CampaignTime.Now.ToHours;
+            if (hour != _spareFoodHour)
+            {
+                _spareFood.Clear();
+                _spareFoodHour = hour;
+            }
+
+            int spare;
+            if (_spareFood.TryGetValue(settlement, out spare))
+            {
+                return spare;
+            }
+
+            Dictionary<ItemObject, int> stock = new Dictionary<ItemObject, int>();
+            ItemRoster roster = settlement.ItemRoster;
+            for (int i = 0; i < roster.Count; i++)
+            {
+                ItemRosterElement element = roster.GetElementCopyAtIndex(i);
+                ItemObject item = element.EquipmentElement.Item;
+                if (item == null || !item.IsFood || element.Amount <= 0)
+                {
+                    continue;
+                }
+
+                int amount;
+                stock.TryGetValue(item, out amount);
+                stock[item] = amount + element.Amount;
+            }
+
+            spare = 0;
+            foreach (KeyValuePair<ItemObject, int> pair in stock)
+            {
+                spare += Math.Max(0, pair.Value - CastleMarketTownsBehavior.Reserve(settlement, pair.Key));
+            }
+
+            _spareFood[settlement] = spare;
+            return spare;
         }
 
         public static float ScaleMarketProsperity(float rate, Town town)

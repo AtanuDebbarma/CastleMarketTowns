@@ -55,6 +55,10 @@
       <HintPath>$(BannerlordBin)TaleWorlds.CampaignSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="TaleWorlds.CampaignSystem.ViewModelCollection">
+      <HintPath>$(BannerlordBin)TaleWorlds.CampaignSystem.ViewModelCollection.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="TaleWorlds.Core">
       <HintPath>$(BannerlordBin)TaleWorlds.Core.dll</HintPath>
       <Private>false</Private>

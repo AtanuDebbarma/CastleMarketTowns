@@ -33,6 +33,7 @@ namespace CastleMarketTowns
             OverrideCastleProjects = true;
             CaravansVisitCastles = true;
             HotButterTavernOptions = true;
+            ImprovedGarrisonsSupport = true;
             CastleCompanions = true;
             CompanionArrivalPercent = 100;
             CompanionDeparturePercent = 10;
@@ -42,6 +43,7 @@ namespace CastleMarketTowns
             MerchantNotables = 2;
             ArtisanNotables = 2;
             WorkshopCount = 1;
+            ExtraWorkshopLimit = 0;
             ProsperityFloor = 1000;
             MarketPercent = 25;
             CastleProductionPercent = 20;
@@ -97,6 +99,10 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("General")]
         public bool HotButterTavernOptions { get; set; }
 
+        [SettingPropertyBool("Improved Garrisons support", Order = 11, RequireRestart = false, HintText = "Only matters if Improved Garrisons is installed. On by default. In castles the mod covers, its menu button moves into Go to the castle, as it sits in Go to the keep in towns; its project tooltips show the castle Marketplace tariff and the Castellan's Office tax; and its recruiter, patrol and mobile garrison parties treat those castles like towns, so they recruit from castle merchants and artisans, sell loot and buy horses in the castle market. Improved Garrisons' own files are never changed. Turn this off and those three changes stop. Its garrisons still recruit from the castle's own merchants and artisans, as in towns. Without Improved Garrisons this does nothing.")]
+        [SettingPropertyGroup("General")]
+        public bool ImprovedGarrisonsSupport { get; set; }
+
         [SettingPropertyBool("Companions in castle taverns", IsToggle = true, Order = 0, RequireRestart = false, HintText = "On by default. On the first eligible day, creates a small, bounded group of companions in different castle taverns using the active companion system's unused templates and creation rules: the base game's, or a replacement such as Women in Calradia's. A save marker prevents reseeding. If no compatible companion system is found, the seed is skipped once and castle taverns fill only as companions move from towns. Afterward, unhired companions move between towns and nearby castles; the settings in this group control how often. Supports War Sails without requiring it. Turn this off and tracked unhired castle companions move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists, once they are free to move: not giving a quest, imprisoned, in a party or in the castle you are in. Turning it back on does not seed again. If another mod overrides companion behavior and causes problems in castles, leave this off. Needs Add a tavern.")]
         [SettingPropertyGroup("General/Castle companions")]
         public bool CastleCompanions { get; set; }
@@ -113,15 +119,15 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("General/Castle companions")]
         public int CompanionMinimumStayDays { get; set; }
 
-        [SettingPropertyBool("Caravans trade at castles", Order = 9, RequireRestart = false, HintText = "On by default. Every caravan, including yours, NPC caravans, and caravans formed in a castle, can pick a castle as a trade stop, then buy and sell there like in a town. Only castles the mod is active on count, so the two clan switches decide which castles caravans visit. A caravan formed in a castle starts from that castle. Turn this off and caravans only trade in towns, as in vanilla.")]
+        [SettingPropertyBool("Caravans trade at castles", Order = 9, RequireRestart = false, HintText = "On by default. Every caravan, including yours, NPC caravans, and caravans formed in a castle, can pick a castle as a trade stop, then buy and sell there like in a town; visits count toward trade agreements. Only castles the mod is active on count, so the two clan switches decide which castles caravans visit. A caravan formed in a castle starts from that castle. Turn this off and caravans only trade in towns, as in vanilla.")]
         [SettingPropertyGroup("General")]
         public bool CaravansVisitCastles { get; set; }
 
-        [SettingPropertyBool("Apply to your kingdom's clans", Order = 7, RequireRestart = false, HintText = "On by default. Covers castles owned by other clans in the kingdom your clan belongs to, and lets lords of those clans recruit at any castle the mod covers, as they do in towns and villages. Your own clan's castles are always changed. Turn this off and those castles go back to vanilla: the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists. Castles outside your kingdom use the next switch.")]
+        [SettingPropertyBool("Apply to your kingdom's clans", Order = 7, RequireRestart = false, HintText = "On by default. Covers castles owned by other clans in the kingdom your clan belongs to, and lets lords of those clans recruit at any castle the mod covers, as they do in towns and villages. Your own clan's castles are always changed. Turn this off and those castles go back to vanilla: workshops you own there are sold at the base game's price to a castle notable (or one from the nearest town if none is left), the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists. Castles outside your kingdom use the next switch.")]
         [SettingPropertyGroup("General")]
         public bool ApplyToKingdom { get; set; }
 
-        [SettingPropertyBool("Apply to other kingdoms and clans", Order = 8, RequireRestart = false, HintText = "On by default. Covers castles owned by any clan outside your kingdom: other kingdoms and independent clans. If your clan has no kingdom, this covers every castle you do not own. It also lets lords and caravans of those clans recruit at any castle the mod covers, as they do in towns and villages. Turn it off and they cannot recruit at castles. Turn this off and those castles go back to vanilla: the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists.")]
+        [SettingPropertyBool("Apply to other kingdoms and clans", Order = 8, RequireRestart = false, HintText = "On by default. Covers castles owned by any clan outside your kingdom: other kingdoms and independent clans. If your clan has no kingdom, this covers every castle you do not own. It also lets lords and caravans of those clans recruit at any castle the mod covers, as they do in towns and villages. Turn it off and they cannot recruit at castles. Turn this off and those castles go back to vanilla: workshops you own there are sold at the base game's price to a castle notable (or one from the nearest town if none is left), the tavern, the mod workshops and the castle Marketplace are removed, the prosperity and goods the mod added are taken back, and the merchants and artisans the mod created move to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists.")]
         [SettingPropertyGroup("General")]
         public bool ApplyToNpc { get; set; }
 
@@ -137,7 +143,11 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("People and workshops")]
         public int WorkshopCount { get; set; }
 
-        [SettingPropertyInteger("Merchant purse", 0, 50000, "0", Order = 3, RequireRestart = false, HintText = "Gold given to a merchant this mod creates, if they have less. Vanilla caravans need a large purse before a notable will form one.")]
+        [SettingPropertyInteger("Extra workshop limit", 0, 10, "0", Order = 3, RequireRestart = false, HintText = "Raises how many workshops you may own, in towns and castles alike. The base game allows your clan tier plus 1, so 1 at tier 0 up to 7 at tier 6, and castle workshops count toward it. Default 0 keeps that limit. Lowering it never takes a workshop away; you just cannot buy another until you are under the limit again.")]
+        [SettingPropertyGroup("People and workshops")]
+        public int ExtraWorkshopLimit { get; set; }
+
+        [SettingPropertyInteger("Merchant purse", 0, 50000, "0", Order = 4, RequireRestart = false, HintText = "Gold given to a merchant this mod creates, if they have less. Vanilla caravans need a large purse before a notable will form one.")]
         [SettingPropertyGroup("People and workshops")]
         public int MerchantGold { get; set; }
 
@@ -181,7 +191,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup("Castle market")]
         public bool SiegeFoodFromMarket { get; set; }
 
-        [SettingPropertyBool("Lords buy food at castles", Order = 8, RequireRestart = false, HintText = "On by default. Lords and their armies can buy food in a castle market, as in a town, but only food above the castle's reserve, so the castle keeps its siege food. Turn this off and lords only buy food in towns and villages.")]
+        [SettingPropertyBool("Lords buy food at castles", Order = 8, RequireRestart = false, HintText = "On by default. Lords and their armies can buy food in a castle market, as in a town, but only food above the castle's reserve, so the castle keeps its siege food. Lords short on food also travel to castles that have some to spare. Turn this off and lords only buy food in towns and villages.")]
         [SettingPropertyGroup("Castle market")]
         public bool LordsBuyCastleFood { get; set; }
 

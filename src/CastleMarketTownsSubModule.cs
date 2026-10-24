@@ -36,6 +36,7 @@ namespace CastleMarketTowns
             }
 
             ReportEmptyTranspilers();
+            CastleWorkshops.ReportMissingLookups();
         }
 
         // Harmony quietly skips a class when its Prepare method returns false. Check those classes explicitly so a renamed or
@@ -167,6 +168,15 @@ namespace CastleMarketTowns
             catch (System.Exception exception)
             {
                 TaleWorlds.Library.Debug.Print("Castle Market Towns could not place companions in castle taverns under War Sails: " + exception.Message);
+            }
+
+            try
+            {
+                CastleImprovedGarrisons.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not add Improved Garrisons support: " + exception.Message);
             }
         }
 
