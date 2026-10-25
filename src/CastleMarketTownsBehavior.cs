@@ -166,6 +166,12 @@ namespace CastleMarketTowns
             ValidateOwnership();
             foreach (Settlement settlement in Settlement.All)
             {
+                if (settlement.IsTown && settlement.Town != null)
+                {
+                    SyncTownWorkshops(settlement);
+                    continue;
+                }
+
                 if (!settlement.IsCastle || settlement.Town == null)
                 {
                     continue;
@@ -208,6 +214,12 @@ namespace CastleMarketTowns
 
         private void OnDailySettlement(Settlement settlement)
         {
+            if (settlement != null && settlement.IsTown && settlement.Town != null)
+            {
+                SyncTownWorkshops(settlement);
+                return;
+            }
+
             if (settlement == null || !settlement.IsCastle || settlement.Town == null)
             {
                 return;
@@ -653,13 +665,13 @@ namespace CastleMarketTowns
 
             _menusAdded = true;
             AddKeepMenu(starter);
-            starter.AddGameMenuOption("castle", "castle_market_towns_tavern_district", "{=cmtTavern01}Visit the castle tavern", TavernDistrictCondition, TavernDistrictConsequence, false, CastleMenuIndexOf(starter, "manage_production", 3), false, null);
+            starter.AddGameMenuOption("castle", "castle_market_towns_tavern_district", "{=cmt_menu_visit_castle_tavern}Visit the castle tavern", TavernDistrictCondition, TavernDistrictConsequence, false, CastleMenuIndexOf(starter, "manage_production", 3), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_recruit", "{=E31IJyqs}Recruit troops", RecruitCondition, RecruitConsequence, false, CastleMenuIndexOf(starter, "open_stash", 5), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_trade", "{=GmcgoiGy}Trade", TradeCondition, TradeConsequence, false, CastleMenuIndexOf(starter, "open_stash", 6), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_smithy", "{=McHsHbH8}Enter smithy", SmithyCondition, SmithyConsequence, false, CastleMenuIndexOf(starter, "take_a_walk_around_the_castle", 9), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_warehouse", "{=LK4kNZkb}Enter the warehouse", CastleWorkshops.WarehouseCondition, CastleWorkshops.WarehouseConsequence, false, CastleMenuIndexOf(starter, "open_stash", 7), false, null);
 
-            starter.AddGameMenu(TavernMenuId, "{=cmtTavern02}You are in the castle tavern. Off-duty soldiers, traders and travellers share the benches.", TavernMenuInit, GameMenu.MenuOverlayType.SettlementWithBoth, GameMenu.MenuFlags.None, null);
+            starter.AddGameMenu(TavernMenuId, "{=cmt_menu_castle_tavern_description}You are in the castle tavern. Off-duty soldiers, traders and travellers share the benches.", TavernMenuInit, GameMenu.MenuOverlayType.SettlementWithBoth, GameMenu.MenuFlags.None, null);
             starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_tavern", "{=qcl3YTPh}Visit the tavern", TavernCondition, TavernConsequence, false, -1, false, null);
             AddHotButterOption(starter, "castle_market_towns_sell_body", "{=pompasellyourbody}Sell your body for {SELL_BODY_GOLD_AMOUNT}{GOLD_ICON}", "kendinisat");
             AddHotButterOption(starter, "castle_market_towns_fine_prostitute", "{=pompafinep}Get a fine prostitute ({GOLD_AMOUNT_EH}{GOLD_ICON})", "kendinekadar_eh");
@@ -667,7 +679,7 @@ namespace CastleMarketTowns
             AddHotButterOption(starter, "castle_market_towns_troop_prostitutes", "{=pompagrup}Get prostitutes for your troops ({GOLD_AMOUNT_GRUP}{GOLD_ICON})", "grup");
             starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_ransom_all", "{=xZIBKK0v}Ransom your prisoners ({RANSOM_AMOUNT}{GOLD_ICON})", args => RansomCondition(args, "SellPrisonersCondition"), RansomAllConsequence, false, -1, false, null);
             starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_ransom_some", "{=Q8VN9UCq}Choose the prisoners to be ransomed", args => RansomCondition(args, "SellPrisonerOneStackCondition"), RansomSomeConsequence, false, -1, false, null);
-            starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_tavern_back", "{=cmtTavern03}Back to the castle", TavernBackCondition, TavernBackConsequence, true, -1, false, null);
+            starter.AddGameMenuOption(TavernMenuId, "castle_market_towns_tavern_back", "{=cmt_menu_back_to_castle}Back to the castle", TavernBackCondition, TavernBackConsequence, true, -1, false, null);
         }
 
         private const string TavernMenuId = "castle_market_towns_tavern_menu";
@@ -703,7 +715,7 @@ namespace CastleMarketTowns
             }
 
             MoveImprovedGarrisonsToKeep(starter, castle);
-            starter.AddGameMenuOption("castle", "castle_market_towns_keep", "{=cmtKeep01}Go to the castle", KeepCondition, KeepConsequence, false, CastleMenuIndexOf(starter, "castle_prison", 0), false, null);
+            starter.AddGameMenuOption("castle", "castle_market_towns_keep", "{=cmt_menu_go_to_castle}Go to the castle", KeepCondition, KeepConsequence, false, CastleMenuIndexOf(starter, "castle_prison", 0), false, null);
             starter.AddGameMenu(KeepBribeMenuId, "{=yyz111nn}The guards say that they can't just let anyone in.", KeepBribeMenuInit, GameMenu.MenuOverlayType.SettlementWithCharacters, GameMenu.MenuFlags.None, null);
             starter.AddGameMenuOption(KeepBribeMenuId, "castle_market_towns_keep_bribe_pay", "{=3lxq5fvI}Pay a {AMOUNT}{GOLD_ICON} bribe to enter the castle.", KeepBribeCondition, KeepBribeConsequence, false, -1, false, null);
             starter.AddGameMenuOption(KeepBribeMenuId, "castle_market_towns_keep_bribe_back", "{=E1OwmQFb}Back", TavernBackCondition, TavernBackConsequence, true, -1, false, null);
@@ -1126,7 +1138,7 @@ namespace CastleMarketTowns
             }
             catch (Exception exception)
             {
-                InformationManager.DisplayMessage(new InformationMessage("Prisoners could not be ransomed. " + exception.Message));
+                InformationManager.DisplayMessage(new InformationMessage(new TextObject("{=cmt_error_ransom_failed}Prisoners could not be ransomed.").ToString() + " " + exception.Message));
             }
 
             GameMenu.SwitchToMenu(TavernMenuId);
@@ -1221,7 +1233,7 @@ namespace CastleMarketTowns
             }
             catch (Exception exception)
             {
-                InformationManager.DisplayMessage(new InformationMessage("Hot Butter could not run in the castle tavern. " + exception.Message));
+                InformationManager.DisplayMessage(new InformationMessage(new TextObject("{=cmt_error_hot_butter_tavern}Hot Butter could not run in the castle tavern.").ToString() + " " + exception.Message));
             }
         }
 
@@ -1253,7 +1265,7 @@ namespace CastleMarketTowns
             }
             catch (Exception exception)
             {
-                InformationManager.DisplayMessage(new InformationMessage("The castle tavern could not be opened. " + exception.Message));
+                InformationManager.DisplayMessage(new InformationMessage(new TextObject("{=cmt_error_tavern_open}The castle tavern could not be opened.").ToString() + " " + exception.Message));
             }
             finally
             {
@@ -1385,7 +1397,7 @@ namespace CastleMarketTowns
             {
                 Step("move notables out of", settlement, delegate { RelocateNotables(settlement, settings.MerchantNotables, settings.ArtisanNotables); });
                 Step("add notables to", settlement, delegate { EnsureNotables(settlement, settings); });
-                Step("resize the workshops of", settlement, delegate { ResizeWorkshops(settlement, HasWorkshopOwners(settlement) ? Clamp(settings.WorkshopCount, 0, 4) : 0); });
+                Step("resize the workshops of", settlement, delegate { ResizeWorkshops(settlement, HasWorkshopOwners(settlement) ? Clamp(settings.WorkshopCount, 0, CastleMarketTownsSettings.MaxCastleWorkshopSlots) : 0); });
                 Step("assign the workshops of", settlement, delegate { AssignWorkshops(settlement); });
                 Step("bring back the workshops of", settlement, delegate { ReclaimWorkshops(settlement); });
             }
@@ -1986,6 +1998,117 @@ namespace CastleMarketTowns
             }
         }
 
+        // Only the mod's own slots above the base game's 4 are added or removed; every other town workshop stays.
+        private static void SyncTownWorkshops(Settlement settlement)
+        {
+            Workshop[] current = settlement.Town.Workshops;
+            if (current == null)
+            {
+                return;
+            }
+
+            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
+            int slots = settings == null
+                ? CastleMarketTownsSettings.BaseTownWorkshopSlots
+                : Clamp(settings.TownWorkshopCount, CastleMarketTownsSettings.BaseTownWorkshopSlots, CastleMarketTownsSettings.MaxTownWorkshopSlots);
+            int added = 0;
+            bool untyped = false;
+            foreach (Workshop workshop in current)
+            {
+                if (IsModWorkshop(workshop))
+                {
+                    added++;
+                    untyped |= workshop.WorkshopType == null;
+                }
+            }
+
+            int target = current.Length - added + slots - CastleMarketTownsSettings.BaseTownWorkshopSlots;
+            if (target == current.Length && !untyped)
+            {
+                return;
+            }
+
+            Step("resize the workshops of", settlement, delegate { ResizeWorkshops(settlement, target); });
+            Step("assign the workshops of", settlement, delegate { AssignTownWorkshops(settlement); });
+        }
+
+        // The town scene reads the type of every workshop when you enter, so a slot that gets no type and owner is removed again.
+        private static void AssignTownWorkshops(Settlement settlement)
+        {
+            List<Workshop> failed = new List<Workshop>();
+            foreach (Workshop workshop in settlement.Town.Workshops)
+            {
+                if (!IsModWorkshop(workshop) || workshop.WorkshopType != null)
+                {
+                    continue;
+                }
+
+                try
+                {
+                    Hero owner = Campaign.Current.Models.WorkshopModel.GetNotableOwnerForWorkshop(workshop) ?? FirstNotable(settlement);
+                    WorkshopType type = TownWorkshopType(settlement);
+                    if (owner != null && type != null)
+                    {
+                        workshop.InitializeWorkshop(owner, type);
+                        continue;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    Debug.Print("Castle Market Towns could not set up an added workshop in " + settlement.Name + ": " + exception.Message);
+                }
+
+                failed.Add(workshop);
+            }
+
+            foreach (Workshop workshop in failed)
+            {
+                RemoveWorkshop(settlement, workshop);
+            }
+        }
+
+        private static bool IsModWorkshop(Workshop workshop)
+        {
+            return workshop != null && workshop.Tag != null && workshop.Tag.StartsWith(WorkshopTagPrefix, StringComparison.Ordinal);
+        }
+
+        private static Hero FirstNotable(Settlement settlement)
+        {
+            foreach (Hero hero in settlement.Notables)
+            {
+                if (hero != null && hero.IsAlive)
+                {
+                    return hero;
+                }
+            }
+
+            return null;
+        }
+
+        private static WorkshopType TownWorkshopType(Settlement settlement)
+        {
+            WorkshopsCampaignBehavior behavior = Campaign.Current.GetCampaignBehavior<WorkshopsCampaignBehavior>();
+            if (DecideWorkshopType != null && behavior != null)
+            {
+                WorkshopType decided = DecideWorkshopType.Invoke(behavior, new object[] { settlement, false, null }) as WorkshopType;
+                if (decided != null && !decided.IsHidden)
+                {
+                    return decided;
+                }
+            }
+
+            List<WorkshopType> types = new List<WorkshopType>();
+            foreach (WorkshopType type in WorkshopType.All)
+            {
+                if (type != null && !type.IsHidden)
+                {
+                    types.Add(type);
+                }
+            }
+
+            return types.Count == 0 ? null : types[MBRandom.RandomInt(types.Count)];
+        }
+
         private void EnsureMarket(Settlement settlement, CastleMarketTownsSettings settings)
         {
             if (_prepared.Contains(settlement.StringId))
@@ -2170,6 +2293,7 @@ namespace CastleMarketTowns
         }
 
         private static readonly FieldInfo MarketDataField = typeof(Town).GetField("_marketData", BindingFlags.Instance | BindingFlags.NonPublic);
+        private static readonly MethodInfo DecideWorkshopType = AccessTools.Method(typeof(WorkshopsCampaignBehavior), "DecideBestWorkshopType");
 
         private bool MarketIsOurs(Settlement settlement)
         {

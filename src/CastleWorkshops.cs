@@ -7,6 +7,7 @@ using Helpers;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
+using TaleWorlds.CampaignSystem.ComponentInterfaces;
 using TaleWorlds.CampaignSystem.GameComponents;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.Inventory;
@@ -143,7 +144,7 @@ namespace CastleMarketTowns
                 GiveGoldAction.ApplyBetweenCharacters(null, Hero.MainHero, goodsGold);
             }
 
-            TextObject message = new TextObject("{=cmtWorkshop01}{SETTLEMENT} no longer has a castle market, so your {COUNT} {?(COUNT > 1)}workshops there were{?}workshop there was{\\?} sold for {GOLD}{GOLD_ICON}.");
+            TextObject message = new TextObject("{=cmt_notice_workshops_sold}{SETTLEMENT} no longer has a castle market, so your {COUNT} {?(COUNT > 1)}workshops there were{?}workshop there was{\\?} sold for {GOLD}{GOLD_ICON}.");
             message.SetTextVariable("SETTLEMENT", settlement.Name);
             message.SetTextVariable("COUNT", owned.Count);
             message.SetTextVariable("GOLD", workshopGold + goodsGold);
@@ -351,7 +352,8 @@ namespace CastleMarketTowns
         }
     }
 
-    // Optional extra slots on top of the base game's clan tier + 1. Castle and town workshops share the one limit.
+    // The base game's limit, clan tier + 1, becomes the town limit plus Extra town workshop limit.
+    // Castle workshops count against their own limit instead; see CastleWorkshopLimits.
     [HarmonyPatch(typeof(DefaultWorkshopModel), "GetMaxWorkshopCountForClanTier")]
     internal static class CastleWorkshopLimitPatch
     {
@@ -362,6 +364,136 @@ namespace CastleMarketTowns
             {
                 __result += settings.ExtraWorkshopLimit;
             }
+        }
+    }
+
+    internal static class CastleWorkshopLimits
+    {
+        public static int Limit(bool castle)
+        {
+            int limit = Campaign.Current.Models.WorkshopModel.GetMaxWorkshopCountForClanTier(Clan.PlayerClan.Tier);
+            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
+            if (!castle || settings == null)
+            {
+                return limit;
+            }
+
+            return limit - Math.Max(0, settings.ExtraWorkshopLimit) + Math.Max(0, settings.CastleWorkshopLimit);
+        }
+
+        public static int Owned(bool castle)
+        {
+            int count = 0;
+            if (Hero.MainHero == null || Hero.MainHero.OwnedWorkshops == null)
+            {
+                return count;
+            }
+
+            foreach (Workshop workshop in Hero.MainHero.OwnedWorkshops)
+            {
+                if (workshop != null && workshop.Settlement != null && workshop.Settlement.IsCastle == castle)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        public static bool Full(bool castle)
+        {
+            return Limit(castle) <= Owned(castle);
+        }
+    }
+
+    // Buying a workshop from a notable: the base game checks every owned workshop against one limit.
+    [HarmonyPatch]
+    internal static class CastleWorkshopBuyLimitPatch
+    {
+        static List<MethodBase> Targets()
+        {
+            return SettlementGetter.Existing(AccessTools.Method(typeof(WorkshopsCharactersCampaignBehavior), "can_player_buy_workshop_clickable_condition"));
+        }
+
+        static bool Prepare()
+        {
+            return Targets().Count > 0;
+        }
+
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            return Targets();
+        }
+
+        static void Postfix(Workshop workshop, ref bool __result, ref TextObject explanation)
+        {
+            if (workshop == null || workshop.Settlement == null || Hero.MainHero == null || Clan.PlayerClan == null || Hero.MainHero.OwnedWorkshops == null)
+            {
+                return;
+            }
+
+            bool castle = workshop.Settlement.IsCastle;
+            if (CastleWorkshopLimits.Full(castle))
+            {
+                __result = false;
+                explanation = castle
+                    ? new TextObject("{=cmt_workshop_castle_limit_reached}You have reached the maximum number of castle workshops you can have.")
+                    : new TextObject("{=cmt_workshop_town_limit_reached}You have reached the maximum number of town workshops you can have.");
+                return;
+            }
+
+            WorkshopModel model = Campaign.Current.Models.WorkshopModel;
+            if (model.GetMaxWorkshopCountForClanTier(Clan.PlayerClan.Tier) > Hero.MainHero.OwnedWorkshops.Count)
+            {
+                return;
+            }
+
+            // Only the shared limit blocked this purchase; the gold check behind it still applies.
+            if (Hero.MainHero.Gold < model.GetCostForPlayer(workshop))
+            {
+                __result = false;
+                explanation = new TextObject("{=B2jpmFh6}You don't have enough money to buy this workshop.");
+                return;
+            }
+
+            __result = true;
+            explanation = null;
+        }
+    }
+
+    // The clan screen shows owned workshops over the one limit; it shows the town and castle limits instead.
+    [HarmonyPatch]
+    internal static class CastleClanWorkshopCountPatch
+    {
+        static List<MethodBase> Targets()
+        {
+            return SettlementGetter.Existing(AccessTools.Method(typeof(ClanIncomeVM), "RefreshList", Type.EmptyTypes));
+        }
+
+        static bool Prepare()
+        {
+            return Targets().Count > 0;
+        }
+
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            return Targets();
+        }
+
+        static void Postfix(ClanIncomeVM __instance)
+        {
+            if (Hero.MainHero == null || Clan.PlayerClan == null)
+            {
+                return;
+            }
+
+            TextObject text = new TextObject("{=cmt_clan_workshop_counts}{WORKSHOPS} (towns {TOWN_OWNED}/{TOWN_LIMIT}, castles {CASTLE_OWNED}/{CASTLE_LIMIT})");
+            text.SetTextVariable("WORKSHOPS", GameTexts.FindText("str_clan_workshops"));
+            text.SetTextVariable("TOWN_OWNED", CastleWorkshopLimits.Owned(false));
+            text.SetTextVariable("TOWN_LIMIT", CastleWorkshopLimits.Limit(false));
+            text.SetTextVariable("CASTLE_OWNED", CastleWorkshopLimits.Owned(true));
+            text.SetTextVariable("CASTLE_LIMIT", CastleWorkshopLimits.Limit(true));
+            __instance.WorkshopText = text.ToString();
         }
     }
 

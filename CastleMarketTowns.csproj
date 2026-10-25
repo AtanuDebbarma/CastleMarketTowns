@@ -103,6 +103,7 @@
 
   <ItemGroup>
     <None Include="SubModule.xml" />
+    <None Include="ModuleData\**\*.xml" />
   </ItemGroup>
 
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -114,7 +115,11 @@
   </Target>
 
   <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(DeployToGame)' == 'true'">
+    <ItemGroup>
+      <ModuleDataFiles Include="ModuleData\**\*" />
+    </ItemGroup>
     <Copy SourceFiles="SubModule.xml" DestinationFolder="$(BannerlordModules)CastleMarketTowns\" />
+    <Copy SourceFiles="@(ModuleDataFiles)" DestinationFiles="@(ModuleDataFiles->'$(BannerlordModules)CastleMarketTowns\ModuleData\%(RecursiveDir)%(Filename)%(Extension)')" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BannerlordModules)CastleMarketTowns\bin\Win64_Shipping_Client\" />
     <Message Importance="high" Text="Deployed Castle Market Towns to $(BannerlordModules)CastleMarketTowns" />
   </Target>

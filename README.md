@@ -23,8 +23,8 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Tavern | Yes | No | Yes, using the town tavern scene |
 | Companions to hire | In the tavern | None | In the castle tavern. A small one-time seed uses the active companion system's creation rules; afterward free companions move between towns and nearby castles over time |
 | Merchants and artisans | Yes | None | 2 merchants and 2 artisans |
-| Workshops | 4 slots | None | 1 slot. Bought from castle notables and managed from the clan screen like a town workshop, with its own warehouse |
-| Workshops you can own | Clan tier + 1, across all towns | None, castles have no workshops | Clan tier + 1, shared with towns: castle workshops count toward the same limit. An optional extra limit raises it for both |
+| Workshops | 4 slots | None | 2 slots. Bought from castle notables and managed from the clan screen like a town workshop, with its own warehouse |
+| Workshops you can own | Clan tier + 1, across all towns | None, castles have no workshops | Clan tier + 1 across all castles, a limit separate from towns. Town and castle limits each have their own optional extra |
 | Caravans | Formed by town merchants | None | Formed by castle merchants. Caravans also trade at castles |
 | Volunteers from notables | Yes | None | Yes, at 65% of a town's speed, 50% chance of noble troops |
 | Noble recruits from villages | No | Yes | Yes, unchanged |
@@ -57,8 +57,8 @@ Every town feature was weighed against a few rules. A feature was included only 
 
 All values and features can be changed in the game through [Mod Configuration Menu (MCM)][mcm], under **Options > Mod Options > Castle Market Towns**, without restarting. You can switch features on or off, choose which castles are covered (your clan, your kingdom, or everyone), and adjust:
 
-- the number of merchants, artisans and workshops;
-- an extra limit on how many workshops you can own, in towns and castles alike;
+- the number of merchants, artisans, and workshop slots in castles and in towns;
+- separate extra limits on how many workshops you can own in towns and in castles;
 - the prosperity floor, starting market stock, production and consumption;
 - the tax and trade prosperity;
 - recruit speed and noble recruit chance;
@@ -97,6 +97,10 @@ With War Sails, castles only link to towns they can actually reach. Caravans use
 - **[CompanionsCraft][companionscraft]** (tested with 1.1.0) is supported without being required, and its files are never changed. When you leave a castle, its companions buy hardwood, charcoal, iron ore and iron from the castle market at the castle's prices, as they do in towns. Before 1.3.0, leaving a castle whose market stocked any of these crashed the game. Refining stays in towns, as in CompanionsCraft itself. If a CompanionsCraft update changes the part this mod adjusts, that support stays inactive and the game log names it.
 - **Not compatible** with other mods that turn castles into towns or overhaul castle menus, markets, notables or buildings. Both mods would change the same castle objects. To switch to another castle overhaul, remove this mod first (see below).
 - **Companions:** on the first eligible daily tick, the mod asks the active companion system to create a small, globally capped seed from its unused companion templates and places each in a different eligible castle. This is the base game's companion system, or a replacement that keeps its companion-creation step, such as Women in Calradia's. If no such system is active, the seed is skipped once and castle taverns fill only as existing companions move from towns. A save marker prevents another seed after the option is switched off and on. Afterward, unhired companions move between towns and nearby castles over time. The seed and new arrivals stop once castles hold a third of the free pool; if hiring later shrinks the pool, castles can briefly hold more until companions leave. A companion only moves to one of the 3 castles closest to their town, and returns to one of the 3 towns closest to their castle, so they do not jump across the map. The **Castle companions** group in [MCM][mcm] sets the daily arrival chance (default 100%), the daily departure chance (default 10%) and the minimum stay between moves (default 7 days, 1 to 30); these settings are greyed out while the group's switch is off. The base game's own town-to-town companion swaps are unchanged. War Sails is supported without being required, including while its storyline location model is active. Mods that only add companion templates remain compatible. If another mod overrides companion behavior and causes problems in castles, turn off **Companions in castle taverns** in [MCM][mcm]: tracked unhired castle companions go to the nearest reachable town of the castle's culture, or the nearest reachable town if none exists, once they are free to move (not giving a quest, imprisoned, in a party or in the castle you are in), and the rest of the mod is unaffected. Seeded companions remain normal companions in the world and are not deleted.
+
+## Translations
+
+The mod ships in English. All of its text, including every [MCM][mcm] setting and hint, is in `ModuleData/Languages/EN/cmt_strings_en.xml`, and castle menu lines taken from the base game appear in the game's own translation. Anyone may publish a translation as a separate mod that requires Castle Market Towns, without changing its files. [TRANSLATORS.md](TRANSLATORS.md) explains how.
 
 ## Installation
 
@@ -152,7 +156,7 @@ build.cmd
 
 The DLL is written to `bin\Win64_Shipping_Client\CastleMarketTowns.dll`, so the repository folder has the same layout as the installed module.
 
-To also copy `SubModule.xml` and the DLL into the game's `Modules\CastleMarketTowns` folder after each build, set `DeployToGame` to `true` in your `CastleMarketTowns.user.props`, or run:
+To also copy `SubModule.xml`, `ModuleData` and the DLL into the game's `Modules\CastleMarketTowns` folder after each build, set `DeployToGame` to `true` in your `CastleMarketTowns.user.props`, or run:
 
 ```bat
 build.cmd /p:DeployToGame=true
@@ -167,7 +171,9 @@ CastleMarketTowns.csproj               Project file
 CastleMarketTowns.user.props.example   Template for local build settings
 build.cmd                              Finds MSBuild and builds the project
 SubModule.xml                          Module definition loaded by the game
+ModuleData/Languages/EN/               English text, the template for translations
 src/                                   C# source
+TRANSLATORS.md                         How to make a translation mod
 ```
 
 ## License and credit
