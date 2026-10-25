@@ -187,6 +187,15 @@ namespace CastleMarketTowns
             {
                 TaleWorlds.Library.Debug.Print("Castle Market Towns could not add CompanionsCraft support: " + exception.Message);
             }
+
+            try
+            {
+                CastleTheyMarried.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not add They Married support: " + exception.Message);
+            }
         }
 
         protected override void OnGameStart(Game game, IGameStarter gameStarter)

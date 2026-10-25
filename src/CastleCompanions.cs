@@ -86,7 +86,10 @@ namespace CastleMarketTowns
 
                 if (hero.CurrentSettlement.IsTown)
                 {
-                    free++;
+                    if (CanJoinCastles(hero))
+                    {
+                        free++;
+                    }
                 }
                 else if (hero.CurrentSettlement.IsCastle && Sent.Contains(hero.StringId))
                 {
@@ -136,6 +139,23 @@ namespace CastleMarketTowns
                     break;
                 }
 
+                // A replacement companion system made a child or a clan member. It goes to a town instead, and seeding stops
+                // rather than create more of them.
+                if (!CanJoinCastles(created))
+                {
+                    if (created.CurrentSettlement == destination)
+                    {
+                        Settlement town = NearbyTown(destination, playerSettlement) ?? CastleMarketTownsBehavior.NearestTown(destination);
+                        if (town != null)
+                        {
+                            Move(created, town);
+                        }
+                    }
+
+                    Debug.Print("Castle Market Towns stopped seeding castle taverns because " + creator.GetType().Name + " created " + created.Name + ", who is a child or belongs to a clan.");
+                    break;
+                }
+
                 createdCount++;
                 remaining--;
                 if (created.CurrentSettlement == destination)
@@ -149,7 +169,7 @@ namespace CastleMarketTowns
             return true;
         }
 
-        // Mods such as Women in Calradia remove the base game's companion behavior and register a copy with the same creation
+        // Companion overhaul mods may remove the base game's companion behavior and register a copy with the same creation
         // method, so the creator is matched by method rather than by type. The base game's behavior wins when it is still active.
         private static bool FindCompanionCreator(out object creator, out MethodInfo create)
         {
@@ -213,7 +233,10 @@ namespace CastleMarketTowns
 
                 if (hero.CurrentSettlement.IsTown)
                 {
-                    inTowns.Add(hero);
+                    if (CanJoinCastles(hero))
+                    {
+                        inTowns.Add(hero);
+                    }
                 }
                 else if (sentHere)
                 {
@@ -348,6 +371,13 @@ namespace CastleMarketTowns
             return hero != null && hero.IsAlive && hero.IsActive && hero.IsWanderer && hero.CompanionOf == null && !hero.IsPrisoner
                 && hero.PartyBelongedTo == null && hero.GovernorOf == null && hero.CurrentSettlement != null && hero.Issue == null
                 && !Campaign.Current.QuestManager.IsQuestGiver(hero) && hero.CanMoveToSettlement();
+        }
+
+        // Unhired companions are adults without a clan. A child or a clan member who is a wanderer only by occupation, such as
+        // They Married's children living with their caretakers, is never sent to a castle; one already there can still go back.
+        private static bool CanJoinCastles(Hero hero)
+        {
+            return hero.Clan == null && !hero.IsChild;
         }
 
         private static bool HasFreeCompanion(Settlement settlement)

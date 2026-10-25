@@ -4,7 +4,7 @@ Castle Market Towns ships in English only. Every piece of text the mod adds can 
 
 ## What can be translated
 
-All of the mod's own text is in `ModuleData/Languages/EN/cmt_strings_en.xml`: the Mod Configuration Menu (MCM) page with every group, setting name and hint, the castle menus, the workshop limit messages and the clan screen's workshop count, the notification shown when castle workshops are sold, and three error messages. Use that file as your template.
+All of the mod's own text is in `ModuleData/Languages/EN/cmt_strings_en.xml`: the Mod Configuration Menu (MCM) page with every group, setting name and hint, the castle menus including the castle trainers, the workshop limit messages and the clan screen's workshop count, the notification shown when castle workshops are sold, and three error messages. Use that file as your template.
 
 Some castle menu lines reuse the base game's own text, such as **Trade**, **Recruit troops**, **Enter smithy** and **Back**. The game already translates those, so they are not in the file.
 
@@ -35,10 +35,10 @@ CastleMarketTowns_RU/
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>
-    <DependedModule Id="CastleMarketTowns" DependentVersion="v1.3.1"/>
+    <DependedModule Id="CastleMarketTowns" DependentVersion="v1.3.2"/>
   </DependedModules>
   <DependedModuleMetadatas>
-    <DependedModuleMetadata id="CastleMarketTowns" order="LoadBeforeThis" version="v1.3.1"/>
+    <DependedModuleMetadata id="CastleMarketTowns" order="LoadBeforeThis" version="v1.3.2"/>
   </DependedModuleMetadatas>
   <SubModules/>
 </Module>
@@ -97,7 +97,7 @@ For a language the game does not list here, copy the name from the `language_dat
 ## Testing
 
 1. Enable your module after Castle Market Towns in the launcher and choose your language in the game's options.
-2. Check the **Castle Market Towns** page in MCM under **Options > Mod Options**, and the castle menus: **Go to the castle**, **Visit the castle tavern** and **Back to the castle**.
+2. Check the **Castle Market Towns** page in MCM under **Options > Mod Options**, and the castle menus: **Go to the castle**, **Visit the castle trainers**, **Visit the castle tavern** and **Back to the castle**.
 3. A line that still shows in English means its ID is missing or misspelled in your file. If the game log reports an XML error, check the escaping rules above.
 
 The translation only changes text. It adds nothing to saves, so it can be added or removed at any time.

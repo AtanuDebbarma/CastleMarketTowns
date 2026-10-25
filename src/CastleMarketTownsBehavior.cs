@@ -73,6 +73,8 @@ namespace CastleMarketTowns
         private string _castleCompanionIds = "";
         private string _companionSeedVersion = "";
         private string _companionMoveData = "";
+        private string _skillTrainingData = "";
+        private string _attributeTrainingData = "";
         private bool _menusAdded;
 
         public CastleMarketTownsBehavior()
@@ -85,6 +87,8 @@ namespace CastleMarketTowns
             StockRatios.Clear();
             CastleCompanions.Sent.Clear();
             CastleCompanions.LastMoved.Clear();
+            CastleTraining.LastSkillSession.Clear();
+            CastleTraining.LastAttributeSession.Clear();
         }
 
         public override void RegisterEvents()
@@ -116,6 +120,9 @@ namespace CastleMarketTowns
                 _marketSnapshotData = SerializeMarketSnapshots();
                 _castleCompanionIds = SerializeSet(CastleCompanions.Sent);
                 _companionMoveData = SerializeFloatMap(CastleCompanions.LastMoved);
+                CastleTraining.PruneSessions();
+                _skillTrainingData = SerializeFloatMap(CastleTraining.LastSkillSession);
+                _attributeTrainingData = SerializeFloatMap(CastleTraining.LastAttributeSession);
             }
 
             _preparedIds = SyncChunked(dataStore, "CastleMarketTowns_Prepared", _preparedIds);
@@ -133,6 +140,8 @@ namespace CastleMarketTowns
             _castleCompanionIds = SyncChunked(dataStore, "CastleMarketTowns_CastleCompanions", _castleCompanionIds);
             _companionSeedVersion = SyncChunked(dataStore, "CastleMarketTowns_CompanionSeedVersion", _companionSeedVersion);
             _companionMoveData = SyncChunked(dataStore, "CastleMarketTowns_CompanionMoves", _companionMoveData);
+            _skillTrainingData = SyncChunked(dataStore, "CastleMarketTowns_SkillTraining", _skillTrainingData);
+            _attributeTrainingData = SyncChunked(dataStore, "CastleMarketTowns_AttributeTraining", _attributeTrainingData);
 
             if (dataStore.IsLoading)
             {
@@ -149,6 +158,8 @@ namespace CastleMarketTowns
                 LoadSet(_createdDailyBuildingIds, CreatedDailyBuildings);
                 LoadSet(_castleCompanionIds, CastleCompanions.Sent);
                 LoadFloatMap(_companionMoveData, CastleCompanions.LastMoved);
+                LoadFloatMap(_skillTrainingData, CastleTraining.LastSkillSession);
+                LoadFloatMap(_attributeTrainingData, CastleTraining.LastAttributeSession);
                 if (_ownershipVersion != OwnershipVersion)
                 {
                     foreach (string settlementId in OwnedDailyDefaults)
@@ -715,6 +726,7 @@ namespace CastleMarketTowns
             }
 
             MoveImprovedGarrisonsToKeep(starter, castle);
+            CastleTraining.AddMenus(starter, KeepMenuId, MenuIndexOf(starter, KeepMenuId, "castle_market_towns_keep_back", -1));
             starter.AddGameMenuOption("castle", "castle_market_towns_keep", "{=cmt_menu_go_to_castle}Go to the castle", KeepCondition, KeepConsequence, false, CastleMenuIndexOf(starter, "castle_prison", 0), false, null);
             starter.AddGameMenu(KeepBribeMenuId, "{=yyz111nn}The guards say that they can't just let anyone in.", KeepBribeMenuInit, GameMenu.MenuOverlayType.SettlementWithCharacters, GameMenu.MenuFlags.None, null);
             starter.AddGameMenuOption(KeepBribeMenuId, "castle_market_towns_keep_bribe_pay", "{=3lxq5fvI}Pay a {AMOUNT}{GOLD_ICON} bribe to enter the castle.", KeepBribeCondition, KeepBribeConsequence, false, -1, false, null);
