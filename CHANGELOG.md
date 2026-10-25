@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+
+- CompanionsCraft support, without requiring it or changing its files. Leaving a castle with companions in your party no longer crashes the game when the castle market stocks hardwood, charcoal, iron ore or iron. CompanionsCraft's companions now buy those materials in castles at the castle market's prices, as they do in towns. Without CompanionsCraft nothing is patched.
+
 ## 1.2.0
 
 - Workshops you own in castles appear in the clan screen's **Other** tab next to your town workshops, with the same status, capital and wage details, warehouse settings (**Get Input from the Warehouse** and **Store Outputs in the Warehouse**) and **Manage Workshop** options to change production or sell. Before, they were counted toward your workshop limit but never listed.

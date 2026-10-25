@@ -178,6 +178,15 @@ namespace CastleMarketTowns
             {
                 TaleWorlds.Library.Debug.Print("Castle Market Towns could not add Improved Garrisons support: " + exception.Message);
             }
+
+            try
+            {
+                CastleCompanionsCraft.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not add CompanionsCraft support: " + exception.Message);
+            }
         }
 
         protected override void OnGameStart(Game game, IGameStarter gameStarter)
