@@ -11,6 +11,7 @@ namespace CastleMarketTowns
         internal const int MaxCastleWorkshopSlots = 8;
         internal const int BaseTownWorkshopSlots = 4;
         internal const int MaxTownWorkshopSlots = 10;
+        internal const int MaxFixedCastleWorkshops = 100;
         internal const int MaxSkillCooldownDays = 15;
         internal const int MaxAttributeCooldownDays = 20;
 
@@ -64,6 +65,7 @@ namespace CastleMarketTowns
             TownWorkshopCount = BaseTownWorkshopSlots;
             ExtraWorkshopLimit = 0;
             CastleWorkshopLimit = 0;
+            CastleWorkshopMax = 10;
             ProsperityFloor = 1000;
             MarketPercent = 25;
             CastleProductionPercent = 20;
@@ -186,11 +188,23 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupPeopleAndWorkshops)]
         public int ExtraWorkshopLimit { get; set; }
 
-        [SettingPropertyInteger("{=cmt_mcm_castle_workshop_limit_name}Extra castle workshop limit", 0, 10, "0", Order = 5, RequireRestart = false, HintText = "{=cmt_mcm_castle_workshop_limit_hint}Extra castle workshops you may own on top of the castle limit of clan tier + 1, which is separate from towns. Default 0. Lowering it never takes a workshop away.")]
+        [SettingPropertyInteger("{=cmt_mcm_castle_workshop_limit_name}Extra castle workshop limit", 0, 10, "0", Order = 5, RequireRestart = false, HintText = "{=cmt_mcm_castle_workshop_limit_hint}Extra castle workshops you may own on top of the castle limit of clan tier + 1. Default 0. The castle limit is separate from towns, so mods that change the town limit do not change it. Lowering it never takes a workshop away.")]
         [SettingPropertyGroup(GroupPeopleAndWorkshops)]
         public int CastleWorkshopLimit { get; set; }
 
-        [SettingPropertyInteger("{=cmt_mcm_merchant_gold_name}Merchant purse", 0, 50000, "0", Order = 6, RequireRestart = false, HintText = "{=cmt_mcm_merchant_gold_hint}Gold given to a merchant this mod creates, if they have less. Vanilla caravans need a large purse before a notable will form one.")]
+        [SettingPropertyBool("{=cmt_mcm_fixed_castle_workshop_limit_name}Fixed castle workshop limit", Order = 6, RequireRestart = false, HintText = "{=cmt_mcm_fixed_castle_workshop_limit_hint}Off by default. On uses Castle workshop limit below instead of clan tier + 1 and Extra castle workshop limit, whatever your clan tier.")]
+        [SettingPropertyGroup(GroupPeopleAndWorkshops)]
+        public bool FixedCastleWorkshopLimit { get; set; }
+
+        [SettingPropertyInteger("{=cmt_mcm_castle_workshop_max_name}Castle workshop limit", 1, MaxFixedCastleWorkshops, "0", Order = 7, RequireRestart = false, HintText = "{=cmt_mcm_castle_workshop_max_hint}How many castle workshops you may own while Fixed castle workshop limit is on. Default 10. Lowering it never takes a workshop away.")]
+        [SettingPropertyGroup(GroupPeopleAndWorkshops)]
+        public int CastleWorkshopMax { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_unlimited_castle_workshops_name}Unlimited castle workshops", Order = 8, RequireRestart = false, HintText = "{=cmt_mcm_unlimited_castle_workshops_hint}Off by default. Removes the castle workshop limit, whatever the settings above say.")]
+        [SettingPropertyGroup(GroupPeopleAndWorkshops)]
+        public bool UnlimitedCastleWorkshops { get; set; }
+
+        [SettingPropertyInteger("{=cmt_mcm_merchant_gold_name}Merchant purse", 0, 50000, "0", Order = 9, RequireRestart = false, HintText = "{=cmt_mcm_merchant_gold_hint}Gold given to a merchant this mod creates, if they have less. Vanilla caravans need a large purse before a notable will form one.")]
         [SettingPropertyGroup(GroupPeopleAndWorkshops)]
         public int MerchantGold { get; set; }
 

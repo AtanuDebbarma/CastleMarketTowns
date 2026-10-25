@@ -8,6 +8,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.GameComponents;
+using TaleWorlds.CampaignSystem.Inventory;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Roster;
 using TaleWorlds.CampaignSystem.Settlements;
@@ -83,6 +84,11 @@ namespace CastleMarketTowns
         public static bool MarketRulesAsTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || Covered(settlement));
+        }
+
+        public static bool MarketComponentAsTown(SettlementComponent component)
+        {
+            return component != null && (component.IsTown || Covered(component.Settlement));
         }
 
         public static bool ImprovedGarrisonsTradesAsTown(Settlement settlement)
@@ -359,6 +365,55 @@ namespace CastleMarketTowns
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             return CastleTownRules.Redirect(instructions, typeof(Settlement), "get_IsTown", "MarketRulesAsTown");
+        }
+    }
+
+    // The trade screen only reads town and village markets; any other settlement trades at flat base values.
+    [HarmonyPatch]
+    internal static class CastlePlayerMarketPricesPatch
+    {
+        static List<MethodBase> Targets()
+        {
+            return SettlementGetter.Existing(AccessTools.Method(typeof(InventoryScreenHelper), "GetCurrentMarketDataForPlayer"));
+        }
+
+        static bool Prepare()
+        {
+            return Targets().Count > 0;
+        }
+
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            return Targets();
+        }
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return CastleTownRules.Redirect(instructions, typeof(Settlement), "get_IsTown", "MarketRulesAsTown");
+        }
+    }
+
+    [HarmonyPatch]
+    internal static class CastleTrickleDownPatch
+    {
+        static List<MethodBase> Targets()
+        {
+            return SettlementGetter.Existing(AccessTools.Method(typeof(InventoryLogic), "DoneLogic"));
+        }
+
+        static bool Prepare()
+        {
+            return Targets().Count > 0;
+        }
+
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            return Targets();
+        }
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return CastleTownRules.Redirect(instructions, typeof(SettlementComponent), "get_IsTown", "MarketComponentAsTown");
         }
     }
 

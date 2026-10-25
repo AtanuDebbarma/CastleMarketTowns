@@ -35,10 +35,10 @@ CastleMarketTowns_RU/
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>
-    <DependedModule Id="CastleMarketTowns" DependentVersion="v1.3.2"/>
+    <DependedModule Id="CastleMarketTowns" DependentVersion="v1.3.3"/>
   </DependedModules>
   <DependedModuleMetadatas>
-    <DependedModuleMetadata id="CastleMarketTowns" order="LoadBeforeThis" version="v1.3.2"/>
+    <DependedModuleMetadata id="CastleMarketTowns" order="LoadBeforeThis" version="v1.3.3"/>
   </DependedModuleMetadatas>
   <SubModules/>
 </Module>

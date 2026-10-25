@@ -18,13 +18,13 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 |---|---|---|---|
 | Settlement menu | Town menu | Castle menu | Castle menu, with extra options. The dungeon, garrison, stash and lord's hall move under **Go to the castle**, as towns keep them under **Go to the keep** |
 | Entering | Walk in unless at war or wanted. The keep may ask for a bribe | Ask the guards. Visitors from outside the kingdom with clan tier below 3 pay a bribe at the gate | Walk in unless the castle would turn you away (war, any crime, a bad relation with its lord). **Go to the castle** asks for the castle's bribe, as a town keep does |
-| Market and trade | Yes | No | Yes, smaller. Starts with 25% of the nearest reachable same-culture town's goods, falling back to the nearest reachable town. AI lords sell loot there and travel there to buy food, as they do in towns |
+| Market and trade | Yes | No | Yes, smaller. Starts with 25% of the nearest reachable same-culture town's goods, falling back to the nearest reachable town. Prices follow the castle's own supply and demand, and the Trickle Down trade perk works there, as in towns. AI lords sell loot there and travel there to buy food, as they do in towns |
 | Own production | From its villages | None | 20% of its villages' output, on top of what they send to their town |
 | Tavern | Yes | No | Yes, using the town tavern scene |
 | Companions to hire | In the tavern | None | In the castle tavern. A small one-time seed uses the active companion system's creation rules; afterward free companions move between towns and nearby castles over time |
 | Merchants and artisans | Yes | None | 2 merchants and 2 artisans |
 | Workshops | 4 slots | None | 2 slots. Bought from castle notables and managed from the clan screen like a town workshop, with its own warehouse |
-| Workshops you can own | Clan tier + 1, across all towns | None, castles have no workshops | Clan tier + 1 across all castles, a limit separate from towns. Town and castle limits each have their own optional extra |
+| Workshops you can own | Clan tier + 1, across all towns | None, castles have no workshops | Clan tier + 1 across all castles, a limit separate from towns that mods changing the town limit do not affect. Town and castle limits each have their own optional extra, and the castle limit can be set to a fixed number or removed |
 | Caravans | Formed by town merchants | None | Formed by castle merchants. Caravans also trade at castles |
 | Volunteers from notables | Yes | None | Yes, at 65% of a town's speed, 50% chance of noble troops |
 | Noble recruits from villages | No | Yes | Yes, unchanged |
@@ -70,7 +70,7 @@ The **Castle training** group in [MCM][mcm] switches the whole feature on or off
 All values and features can be changed in the game through [Mod Configuration Menu (MCM)][mcm], under **Options > Mod Options > Castle Market Towns**, without restarting. You can switch features on or off, choose which castles are covered (your clan, your kingdom, or everyone), and adjust:
 
 - the number of merchants, artisans, and workshop slots in castles and in towns;
-- separate extra limits on how many workshops you can own in towns and in castles;
+- separate extra limits on how many workshops you can own in towns and in castles, or a fixed or unlimited castle limit;
 - the prosperity floor, starting market stock, production and consumption;
 - the tax and trade prosperity;
 - recruit speed and noble recruit chance;

@@ -61,7 +61,13 @@
     <string id="cmt_mcm_town_workshop_limit_name" text="Extra town workshop limit" />
     <string id="cmt_mcm_town_workshop_limit_hint" text="Extra town workshops you may own on top of the base game's limit of clan tier + 1. Default 0. Lowering it never takes a workshop away." />
     <string id="cmt_mcm_castle_workshop_limit_name" text="Extra castle workshop limit" />
-    <string id="cmt_mcm_castle_workshop_limit_hint" text="Extra castle workshops you may own on top of the castle limit of clan tier + 1, which is separate from towns. Default 0. Lowering it never takes a workshop away." />
+    <string id="cmt_mcm_castle_workshop_limit_hint" text="Extra castle workshops you may own on top of the castle limit of clan tier + 1. Default 0. The castle limit is separate from towns, so mods that change the town limit do not change it. Lowering it never takes a workshop away." />
+    <string id="cmt_mcm_fixed_castle_workshop_limit_name" text="Fixed castle workshop limit" />
+    <string id="cmt_mcm_fixed_castle_workshop_limit_hint" text="Off by default. On uses Castle workshop limit below instead of clan tier + 1 and Extra castle workshop limit, whatever your clan tier." />
+    <string id="cmt_mcm_castle_workshop_max_name" text="Castle workshop limit" />
+    <string id="cmt_mcm_castle_workshop_max_hint" text="How many castle workshops you may own while Fixed castle workshop limit is on. Default 10. Lowering it never takes a workshop away." />
+    <string id="cmt_mcm_unlimited_castle_workshops_name" text="Unlimited castle workshops" />
+    <string id="cmt_mcm_unlimited_castle_workshops_hint" text="Off by default. Removes the castle workshop limit, whatever the settings above say." />
     <string id="cmt_mcm_merchant_gold_name" text="Merchant purse" />
     <string id="cmt_mcm_merchant_gold_hint" text="Gold given to a merchant this mod creates, if they have less. Vanilla caravans need a large purse before a notable will form one." />
     <string id="cmt_mcm_prosperity_floor_name" text="Prosperity floor" />
@@ -195,6 +201,7 @@
     <string id="cmt_workshop_town_limit_reached" text="You have reached the maximum number of town workshops you can have." />
     <string id="cmt_workshop_castle_limit_reached" text="You have reached the maximum number of castle workshops you can have." />
     <string id="cmt_clan_workshop_counts" text="{WORKSHOPS} (towns {TOWN_OWNED}/{TOWN_LIMIT}, castles {CASTLE_OWNED}/{CASTLE_LIMIT})" />
+    <string id="cmt_workshop_limit_unlimited" text="unlimited" />
 
     <!-- Notifications -->
     <string id="cmt_notice_workshops_sold" text="{SETTLEMENT} no longer has a castle market, so your {COUNT} {?(COUNT &gt; 1)}workshops there were{?}workshop there was{\?} sold for {GOLD}{GOLD_ICON}." />

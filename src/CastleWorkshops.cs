@@ -353,7 +353,7 @@ namespace CastleMarketTowns
     }
 
     // The base game's limit, clan tier + 1, becomes the town limit plus Extra town workshop limit.
-    // Castle workshops count against their own limit instead; see CastleWorkshopLimits.
+    // Castle workshops count against their own limit instead, which never reads this one; see CastleWorkshopLimits.
     [HarmonyPatch(typeof(DefaultWorkshopModel), "GetMaxWorkshopCountForClanTier")]
     internal static class CastleWorkshopLimitPatch
     {
@@ -369,16 +369,38 @@ namespace CastleMarketTowns
 
     internal static class CastleWorkshopLimits
     {
+        // The castle limit uses the base game's formula, clan tier + 1, directly: mods that change the town limit
+        // through the workshop model leave castles alone.
         public static int Limit(bool castle)
         {
-            int limit = Campaign.Current.Models.WorkshopModel.GetMaxWorkshopCountForClanTier(Clan.PlayerClan.Tier);
-            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
-            if (!castle || settings == null)
+            if (!castle)
             {
-                return limit;
+                return Campaign.Current.Models.WorkshopModel.GetMaxWorkshopCountForClanTier(Clan.PlayerClan.Tier);
             }
 
-            return limit - Math.Max(0, settings.ExtraWorkshopLimit) + Math.Max(0, settings.CastleWorkshopLimit);
+            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
+            if (settings == null)
+            {
+                return Clan.PlayerClan.Tier + 1;
+            }
+
+            if (settings.UnlimitedCastleWorkshops)
+            {
+                return int.MaxValue;
+            }
+
+            if (settings.FixedCastleWorkshopLimit)
+            {
+                return Math.Max(1, settings.CastleWorkshopMax);
+            }
+
+            return Clan.PlayerClan.Tier + 1 + Math.Max(0, settings.CastleWorkshopLimit);
+        }
+
+        public static bool Unlimited(bool castle)
+        {
+            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
+            return castle && settings != null && settings.UnlimitedCastleWorkshops;
         }
 
         public static int Owned(bool castle)
@@ -492,7 +514,14 @@ namespace CastleMarketTowns
             text.SetTextVariable("TOWN_OWNED", CastleWorkshopLimits.Owned(false));
             text.SetTextVariable("TOWN_LIMIT", CastleWorkshopLimits.Limit(false));
             text.SetTextVariable("CASTLE_OWNED", CastleWorkshopLimits.Owned(true));
-            text.SetTextVariable("CASTLE_LIMIT", CastleWorkshopLimits.Limit(true));
+            if (CastleWorkshopLimits.Unlimited(true))
+            {
+                text.SetTextVariable("CASTLE_LIMIT", new TextObject("{=cmt_workshop_limit_unlimited}unlimited"));
+            }
+            else
+            {
+                text.SetTextVariable("CASTLE_LIMIT", CastleWorkshopLimits.Limit(true));
+            }
             __instance.WorkshopText = text.ToString();
         }
     }
