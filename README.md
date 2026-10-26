@@ -81,6 +81,8 @@ All values and features can be changed in the game through [Mod Configuration Me
 - castle training: costs, skill gains, the skill cap, cooldowns and who may train;
 - Improved Garrisons support, if that mod is installed.
 
+**Food and reserves:** **Castle reserve days** protects market items from automatic surplus export and AI-lord purchases. It is separate from the castle's **Food Stocks** meter and does not guarantee protection from starvation; the castle can still consume the reserved food.
+
 ## Requirements and versions
 
 | Dependency | Tested version | Expected to work with |
