@@ -42,6 +42,8 @@ namespace CastleMarketTowns
         private const float UnreachableDistance = 1e20f;
 
         private readonly HashSet<string> _prepared = new HashSet<string>();
+        // Castles whose coverage-cancel pass left at least one quest/issue uncancelled; retried on later Cleanup.
+        private readonly HashSet<string> _questCancelPending = new HashSet<string>();
         private readonly HashSet<string> _createdTaverns = new HashSet<string>();
         private readonly HashSet<string> _createdNotables = new HashSet<string>();
         private readonly HashSet<string> _createdMarketData = new HashSet<string>();
@@ -59,6 +61,7 @@ namespace CastleMarketTowns
         private readonly Dictionary<string, float> _originalMarketDemand = new Dictionary<string, float>();
         private readonly HashSet<string> _zeroSnapshotCastles = new HashSet<string>();
         private string _preparedIds = "";
+        private string _questCancelPendingIds = "";
         private string _createdTavernIds = "";
         private string _createdNotableIds = "";
         private string _createdMarketDataIds = "";
@@ -109,6 +112,7 @@ namespace CastleMarketTowns
                 _createdDailyBuildingIds = SerializeSet(CreatedDailyBuildings);
                 _ownershipVersion = OwnershipVersion;
                 _preparedIds = SerializeSet(_prepared);
+                _questCancelPendingIds = SerializeSet(_questCancelPending);
                 _createdTavernIds = SerializeSet(_createdTaverns);
                 _createdNotableIds = SerializeSet(_createdNotables);
                 _createdMarketDataIds = SerializeSet(_createdMarketData);
@@ -126,6 +130,7 @@ namespace CastleMarketTowns
             }
 
             _preparedIds = SyncChunked(dataStore, "CastleMarketTowns_Prepared", _preparedIds);
+            _questCancelPendingIds = SyncChunked(dataStore, "CastleMarketTowns_QuestCancelPending", _questCancelPendingIds);
             _createdTavernIds = SyncChunked(dataStore, "CastleMarketTowns_CreatedTaverns", _createdTavernIds);
             _createdNotableIds = SyncChunked(dataStore, "CastleMarketTowns_CreatedNotables", _createdNotableIds);
             _createdMarketDataIds = SyncChunked(dataStore, "CastleMarketTowns_CreatedMarketData", _createdMarketDataIds);
@@ -146,6 +151,7 @@ namespace CastleMarketTowns
             if (dataStore.IsLoading)
             {
                 LoadSet(_preparedIds, _prepared);
+                LoadSet(_questCancelPendingIds, _questCancelPending);
                 LoadSet(_createdTavernIds, _createdTaverns);
                 LoadSet(_createdNotableIds, _createdNotables);
                 LoadSet(_createdMarketDataIds, _createdMarketData);
@@ -676,6 +682,11 @@ namespace CastleMarketTowns
 
             _menusAdded = true;
             AddKeepMenu(starter);
+            CastleWarEntry.AddMenus(starter);
+            CastleHerdGuardDelivery.AddMenus(starter);
+            CastleArtisanGuardDelivery.AddMenus(starter);
+            // After Go to the castle, like towns list Talk to the garrison commander on the main settlement menu.
+            CastleGarrisonCommander.AddMenus(starter, CastleMenuIndexOf(starter, "castle_market_towns_keep", 0) + 1);
             starter.AddGameMenuOption("castle", "castle_market_towns_tavern_district", "{=cmt_menu_visit_castle_tavern}Visit the castle tavern", TavernDistrictCondition, TavernDistrictConsequence, false, CastleMenuIndexOf(starter, "manage_production", 3), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_recruit", "{=E31IJyqs}Recruit troops", RecruitCondition, RecruitConsequence, false, CastleMenuIndexOf(starter, "open_stash", 5), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_trade", "{=GmcgoiGy}Trade", TradeCondition, TradeConsequence, false, CastleMenuIndexOf(starter, "open_stash", 6), false, null);
@@ -1423,6 +1434,26 @@ namespace CastleMarketTowns
 
         private void Cleanup(Settlement settlement)
         {
+            // Soft-cancel CMT-toggled quests/issues tied to this castle before notables leave. MCM quest toggles alone do not call Cleanup.
+            // Retries when an earlier pass left failures in _questCancelPending (saved across load).
+            string settlementId = settlement.StringId;
+            if (_prepared.Contains(settlementId) || _questCancelPending.Contains(settlementId))
+            {
+                bool cancelled = false;
+                Step("cancel castle-market quests for", settlement, delegate
+                {
+                    cancelled = CastleQuestCoverageCancel.CancelForLostCoverage(settlement);
+                });
+                if (cancelled)
+                {
+                    _questCancelPending.Remove(settlementId);
+                }
+                else
+                {
+                    _questCancelPending.Add(settlementId);
+                }
+            }
+
             Step("track the goods of", settlement, delegate { ClampLedgers(settlement); });
             Step("restore the daily defaults of", settlement, delegate { SyncCastleDailyDefault(settlement); });
             Step("restore the projects of", settlement, delegate { SyncCastleProjects(settlement); });
@@ -1434,9 +1465,9 @@ namespace CastleMarketTowns
             Step("sell the leftover goods of", settlement, delegate { SellProducedLeftovers(settlement); });
             Step("restore the market of", settlement, delegate { RestoreMarket(settlement); });
             Step("restore the prosperity of", settlement, delegate { RestoreProsperity(settlement); });
-            _prepared.Remove(settlement.StringId);
-            _prepared.Remove("prosperity:" + settlement.StringId);
-            StockRatios.Remove(settlement.StringId);
+            _prepared.Remove(settlementId);
+            _prepared.Remove("prosperity:" + settlementId);
+            StockRatios.Remove(settlementId);
         }
 
         private static void Step(string action, Settlement settlement, Action step)
@@ -2166,6 +2197,7 @@ namespace CastleMarketTowns
             SeedMarketStock(settlement, scale);
             market.UpdateStores();
             _prepared.Add(settlement.StringId);
+            _questCancelPending.Remove(settlement.StringId);
         }
 
         private void EnsureProsperity(Settlement settlement, CastleMarketTownsSettings settings)

@@ -572,6 +572,11 @@ namespace CastleMarketTowns
             return settlement != null && settlement.IsCastle && !(CastleMarketTownsBehavior.AppliesTo(settlement) && Enabled(CastleQuest.DeliverHerd));
         }
 
+        public static bool ArtisanCantSellTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || (CastleMarketTownsBehavior.AppliesTo(settlement) && Enabled(CastleQuest.ArtisanCantSell)));
+        }
+
         public static bool FeudTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || (CastleMarketTownsBehavior.AppliesTo(settlement) && Enabled(CastleQuest.FamilyFeud)));
@@ -753,6 +758,27 @@ namespace CastleMarketTowns
             {
                 __result = false;
             }
+        }
+    }
+
+    // Delivery targets: real towns, or covered castles while Artisan Can't Sell is on (same idea as HerdTown).
+    [HarmonyPatch]
+    internal static class CastleArtisanCantSellTargetPatch
+    {
+        static bool Prepare()
+        {
+            return TargetMethod() != null;
+        }
+
+        static MethodBase TargetMethod()
+        {
+            System.Type display = AccessTools.Inner(typeof(ArtisanCantSellProductsAtAFairPriceIssueBehavior), "<>c__DisplayClass8_0");
+            return display == null ? null : AccessTools.Method(display, "<SelectTargetSettlement>b__0");
+        }
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return CastleQuestRules.Redirect(instructions, "get_IsTown", "ArtisanCantSellTown");
         }
     }
 

@@ -300,7 +300,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestOverpricedMaterials { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_quest_artisan_cant_sell_name}Artisan Can't Sell Products", Order = 3, RequireRestart = false, HintText = "{=cmt_mcm_quest_artisan_cant_sell_hint}Artisan quest from the base game. On by default. Needs a merchant in the same castle and a town nearby to deliver to, as in a town. Quests already running are not affected.")]
+        [SettingPropertyBool("{=cmt_mcm_quest_artisan_cant_sell_name}Artisan Can't Sell Products", Order = 3, RequireRestart = false, HintText = "{=cmt_mcm_quest_artisan_cant_sell_hint}Artisan quest from the base game. On by default. Needs a merchant in the same castle and a nearby town or covered castle to deliver to. If the destination is a covered castle whose market gate is blocked while the quest is active (refused entry, disguise, or face charges), you can pay the guards to take the goods in for half the reward. Quests already running are not affected.")]
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestArtisanCantSell { get; set; }
 
@@ -316,7 +316,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestInnAndOut { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_quest_deliver_herd_name}Deliver a Herd (village)", Order = 7, RequireRestart = false, HintText = "{=cmt_mcm_quest_deliver_herd_hint}Village quest from the base game. On by default. A headman of a horse, cattle or sheep village owned by a castle can offer it, and castle merchants and artisans can be the buyer you deliver the herd to. Quests already running are not affected.")]
+        [SettingPropertyBool("{=cmt_mcm_quest_deliver_herd_name}Deliver a Herd (village)", Order = 7, RequireRestart = false, HintText = "{=cmt_mcm_quest_deliver_herd_hint}Village quest from the base game. On by default. A headman of a horse, cattle or sheep village owned by a castle can offer it, and castle merchants and artisans can be the buyer you deliver the herd to. If that castle's market gate is blocked while the quest is active (refused entry, disguise, or face charges), you can pay the guards to take the herd in for half the reward. Quests already running are not affected.")]
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestDeliverHerd { get; set; }
 

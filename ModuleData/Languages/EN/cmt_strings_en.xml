@@ -117,7 +117,7 @@
     <string id="cmt_mcm_quest_overpriced_materials_name" text="Overpriced Raw Materials" />
     <string id="cmt_mcm_quest_overpriced_materials_hint" text="Artisan quest. On by default. Needs a raw material to be expensive in the castle market, as in a town. Quests already running are not affected." />
     <string id="cmt_mcm_quest_artisan_cant_sell_name" text="Artisan Can't Sell Products" />
-    <string id="cmt_mcm_quest_artisan_cant_sell_hint" text="Artisan quest from the base game. On by default. Needs a merchant in the same castle and a town nearby to deliver to, as in a town. Quests already running are not affected." />
+    <string id="cmt_mcm_quest_artisan_cant_sell_hint" text="Artisan quest from the base game. On by default. Needs a merchant in the same castle and a nearby town or covered castle to deliver to. If the destination is a covered castle whose market gate is blocked while the quest is active (refused entry, disguise, or face charges), you can pay the guards to take the goods in for half the reward. Quests already running are not affected." />
     <string id="cmt_mcm_quest_caravan_ambush_name" text="Caravan Ambush" />
     <string id="cmt_mcm_quest_caravan_ambush_hint" text="Merchant or artisan quest from the base game. On by default. The notable must own at least one caravan, as in a town. Castles have no port, so it is always the land version. Quests already running are not affected." />
     <string id="cmt_mcm_quest_army_of_poachers_name" text="Army of Poachers" />
@@ -125,7 +125,7 @@
     <string id="cmt_mcm_quest_inn_and_out_name" text="Inn and Out (village)" />
     <string id="cmt_mcm_quest_inn_and_out_hint" text="Village quest from the base game. On by default. A headman or landowner of a village owned by a castle can ask you to win back a land deed lost at a board game in the castle tavern. Needs the castle tavern. Quests already running are not affected." />
     <string id="cmt_mcm_quest_deliver_herd_name" text="Deliver a Herd (village)" />
-    <string id="cmt_mcm_quest_deliver_herd_hint" text="Village quest from the base game. On by default. A headman of a horse, cattle or sheep village owned by a castle can offer it, and castle merchants and artisans can be the buyer you deliver the herd to. Quests already running are not affected." />
+    <string id="cmt_mcm_quest_deliver_herd_hint" text="Village quest from the base game. On by default. A headman of a horse, cattle or sheep village owned by a castle can offer it, and castle merchants and artisans can be the buyer you deliver the herd to. If that castle's market gate is blocked while the quest is active (refused entry, disguise, or face charges), you can pay the guards to take the herd in for half the reward. Quests already running are not affected." />
     <string id="cmt_mcm_quest_family_feud_name" text="Family Feud (village)" />
     <string id="cmt_mcm_quest_family_feud_hint" text="Village quest from the base game. On by default. A landowner of a village owned by a castle can ask for help with a feud against another village of the same castle. Quests already running are not affected." />
 
@@ -164,6 +164,23 @@
     <string id="cmt_menu_castle_tavern_description" text="You are in the castle tavern. Off-duty soldiers, traders and travellers share the benches." />
     <string id="cmt_menu_back_to_castle" text="Back to the castle" />
     <string id="cmt_menu_go_to_castle" text="Go to the castle" />
+
+    <!-- Wartime castle gate (town-style sneak, castle wording) -->
+    <string id="cmt_castle_disguise" text="Disguise yourself and sneak through the castle gate. ({SNEAK_CHANCE}%)" />
+
+    <!-- Deliver a Herd: tip the gate guards when the castle market gate refuses entry -->
+    <string id="cmt_herd_deliver_to_guards" text="Deliver Herd to Guards" />
+    <string id="cmt_herd_guard_offer" text="The guards offer to take the herd in for you and hand it to the buyer inside, but they will keep a cut of the payment. You would receive {GUARD_HERD_REWARD}{GOLD_ICON}." />
+    <string id="cmt_herd_guard_accept" text="Accept" />
+    <string id="cmt_herd_guard_reject" text="Reject" />
+    <string id="cmt_herd_guard_need_animals" text="You do not have the full herd with you." />
+    <string id="cmt_artisan_deliver_to_guards" text="Deliver Items to Guards" />
+    <string id="cmt_artisan_guard_offer" text="The guards offer to take the {PRODUCT} in for you and hand it to the buyer inside, but they will keep a cut of the payment. You would receive {GUARD_ARTISAN_REWARD}{GOLD_ICON}." />
+    <string id="cmt_artisan_guard_accept" text="Accept" />
+    <string id="cmt_artisan_guard_reject" text="Reject" />
+    <string id="cmt_artisan_guard_need_items" text="You do not have all of the {PRODUCT} with you." />
+    <string id="cmt_artisan_guard_products" text="goods" />
+    <string id="cmt_quest_cancel_coverage" text="{SETTLEMENT} no longer has a castle market, so this task there was called off." />
 
     <!-- Castle training (inside Go to the castle) -->
     <string id="cmt_menu_visit_trainers" text="Visit the castle trainers" />

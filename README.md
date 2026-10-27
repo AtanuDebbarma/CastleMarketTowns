@@ -16,8 +16,8 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 
 | Feature | Town (vanilla) | Castle (vanilla) | Castle with this mod |
 |---|---|---|---|
-| Settlement menu | Town menu | Castle menu | Castle menu, with extra options. The dungeon, garrison, stash and lord's hall move under **Go to the castle**, as towns keep them under **Go to the keep** |
-| Entering | Walk in unless at war or wanted. The keep may ask for a bribe | Ask the guards. Visitors from outside the kingdom with clan tier below 3 pay a bribe at the gate | Walk in unless the castle would turn you away (war, any crime, a bad relation with its lord). **Go to the castle** asks for the castle's bribe, as a town keep does |
+| Settlement menu | Town menu | Castle menu | Castle menu, with extra options. The dungeon, donate/manage garrison, stash and lord's hall move under **Go to the castle**, as towns keep them under **Go to the keep**. **Talk to the garrison commander** (lord troop-delivery quests) stays on the main castle menu, as it does on the main town menu |
+| Entering | Walk in unless at war or wanted. The keep may ask for a bribe. At war / wanted: disguise or face charges, meet someone, leave | Ask the guards. Visitors from outside the kingdom with clan tier below 3 pay a bribe at the gate. At war: no town-style sneak | Town-like at the market gate: walk in when welcome; at war or with enough crime, disguise / face charges like a town (castle wording for sneak); bad relation with the lord still refuses. **Go to the castle** keeps the keep bribe. An active **Deliver a Herd** or **Artisan Can't Sell** delivery to that castle adds **Deliver Herd to Guards** / **Deliver Items to Guards** (half reward) on those refuse / sneak / charges menus. A lord's **Needs Garrison Troops** quest shows **Talk to the garrison commander** on the main castle menu (as in towns), not only at Approach the gates |
 | Market and trade | Yes | No | Yes, smaller. Starts with 25% of the nearest reachable same-culture town's goods, falling back to the nearest reachable town. Prices follow the castle's own supply and demand, and the Trickle Down trade perk works there, as in towns. AI lords sell loot there and travel there to buy food, as they do in towns |
 | Own production | From its villages | None | 20% of its villages' output, on top of what they send to their town |
 | Tavern | Yes | No | Yes, using the town tavern scene |
@@ -35,7 +35,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Town healing perks | Yes | No | Yes |
 | Smithy | Yes, with smithing orders | No | Yes, without smithing orders |
 | Siege food from the market | Yes | No | Yes |
-| Merchant, artisan and village quests | Yes | None | A selection that fits a castle |
+| Merchant, artisan and village quests | Yes | None | A selection that fits a castle: village **Deliver a Herd** and **Family Feud** via castle villages, **Artisan Can't Sell** deliveries to a town or covered castle, and the other castle quest toggles. Blocked market-gate entry for a herd or artisan delivery to that castle offers **Deliver Herd to Guards** / **Deliver Items to Guards** (half reward). If the castle loses CMT coverage, those quests and open issues cancel softly with a journal note (no fail penalties; herd animals are kept); turning off only a quest MCM toggle does not |
 | Training for you and your companions | No | No | Skills and attributes, for gold and influence, with a cooldown |
 | Arena and tournaments | Yes | No | No |
 | Walking the streets in third person | Yes | No | No |
