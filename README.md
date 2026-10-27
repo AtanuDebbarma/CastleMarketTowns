@@ -87,7 +87,7 @@ All values and features can be changed in the game through [Mod Configuration Me
 
 | Dependency | Tested version | Expected to work with |
 |---|---|---|
-| Mount & Blade II: Bannerlord | 1.4.8 | 1.4.x |
+| Mount & Blade II: Bannerlord | 1.4.8 | 1.5.x |
 | War Sails (NavalDLC), optional | 1.2.8 | 1.2.x |
 | [Bannerlord Software Extender (BLSE)][blse], optional | 1.7.5 | 1.x |
 | [Harmony][harmony] | 2.4.2 | 2.x |
