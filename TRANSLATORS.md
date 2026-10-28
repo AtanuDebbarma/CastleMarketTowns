@@ -97,7 +97,7 @@ For a language the game does not list here, copy the name from the `language_dat
 ## Testing
 
 1. Enable your module after Castle Market Towns in the launcher and choose your language in the game's options.
-2. Check the **Castle Market Towns** page in MCM under **Options > Mod Options**, and the castle menus: **Go to the castle**, **Visit the castle trainers**, **Visit the castle tavern**, **Back to the castle**, wartime **Disguise yourself…**, and (with an active **Deliver a Herd** or **Artisan Can't Sell** delivery to a blocked castle market gate) **Deliver Herd to Guards** / **Deliver Items to Guards** and their **Accept** / **Reject** offer screens. **Talk to the garrison commander** reuses the base game's string (`FirEOQaI`); it needs no CMT translation ID.
+2. Check the **Castle Market Towns** page in MCM under **Options > Mod Options**, and the castle menus: **Go to the castle**, **Visit the castle trainers**, **Visit the castle tavern**, **Back to the castle**, wartime **Disguise yourself…**, and (only with an active **Deliver a Herd** or **Artisan Can't Sell** delivery to a blocked castle market gate) **Deliver Herd to Guards** / **Deliver Items to Guards** and their **Accept** / **Reject** offer screens. **Talk to the garrison commander** and ordinary entry-denied lines reuse the base game's strings (`FirEOQaI` and vanilla denial text); they need no CMT translation IDs. Coverage-loss cancels use `cmt_quest_cancel_coverage`.
 3. A line that still shows in English means its ID is missing or misspelled in your file. If the game log reports an XML error, check the escaping rules above.
 
 The translation only changes text. It adds nothing to saves, so it can be added or removed at any time.

@@ -119,7 +119,7 @@ namespace CastleMarketTowns
             return crime.IsPlayerCrimeRatingModerate(faction) || crime.IsPlayerCrimeRatingSevere(faction);
         }
 
-        // Vanilla: same-faction refuse at relation <= -4 (leader not you); neutral refuse at relation < 0.
+        // Vanilla CanMainHeroEnterCastle: same-faction refuse at relation < -4 when the player is not their map faction's ruler; neutral refuse at relation < 0.
         private static bool HasBadLordRelation(Settlement settlement)
         {
             if (settlement == null || settlement.OwnerClan == null || settlement.OwnerClan.Leader == null || Hero.MainHero == null)
@@ -143,7 +143,12 @@ namespace CastleMarketTowns
             IFaction settlementFaction = settlement.MapFaction;
             if (DiplomacyHelper.IsSameFactionAndNotEliminated(playerFaction, settlementFaction))
             {
-                return relation <= -4f;
+                if (playerFaction != null && playerFaction.Leader == Hero.MainHero)
+                {
+                    return false;
+                }
+
+                return relation < -4f;
             }
 
             if (FactionManager.IsNeutralWithFaction(playerFaction, settlementFaction))
@@ -241,7 +246,8 @@ namespace CastleMarketTowns
                     return true;
                 }
 
-                InitializeAccessDetailsMethod.Invoke(__instance, new object[] { args });
+                // Bannerlord 1.4.8: private void InitializeAccessDetails() — no parameters.
+                InitializeAccessDetailsMethod.Invoke(__instance, null);
                 object boxed = AccessDetailsField.GetValue(__instance);
                 if (!(boxed is SettlementAccessModel.AccessDetails))
                 {

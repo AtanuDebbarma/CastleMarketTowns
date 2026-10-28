@@ -17,7 +17,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Feature | Town (vanilla) | Castle (vanilla) | Castle with this mod |
 |---|---|---|---|
 | Settlement menu | Town menu | Castle menu | Castle menu, with extra options. The dungeon, donate/manage garrison, stash and lord's hall move under **Go to the castle**, as towns keep them under **Go to the keep**. **Talk to the garrison commander** (lord troop-delivery quests) stays on the main castle menu, as it does on the main town menu |
-| Entering | Walk in unless at war or wanted. The keep may ask for a bribe. At war / wanted: disguise or face charges, meet someone, leave | Ask the guards. Visitors from outside the kingdom with clan tier below 3 pay a bribe at the gate. At war: no town-style sneak | Town-like at the market gate: walk in when welcome; at war or with enough crime, disguise / face charges like a town (castle wording for sneak); bad relation with the lord still refuses. **Go to the castle** keeps the keep bribe. An active **Deliver a Herd** or **Artisan Can't Sell** delivery to that castle adds **Deliver Herd to Guards** / **Deliver Items to Guards** (half reward) on those refuse / sneak / charges menus. A lord's **Needs Garrison Troops** quest shows **Talk to the garrison commander** on the main castle menu (as in towns), not only at Approach the gates |
+| Entering | Walk in unless at war or wanted. The keep may ask for a bribe. At war / wanted: disguise or face charges, meet someone, leave | Ask the guards. Visitors from outside the kingdom with clan tier below 3 pay a bribe at the gate. At war: no town-style sneak | Town-like at the market gate when welcome. Early on, low relation or clan tier can still refuse you (same idea as vanilla). At war or with enough crime: disguise / face charges like a town (castle wording for sneak). **Go to the castle** keeps the keep bribe. Only with an **active** **Deliver a Herd** or **Artisan Can't Sell** delivery to that castle do **Deliver Herd to Guards** / **Deliver Items to Guards** appear on refuse / sneak / charges menus (half reward). A lord's **Needs Garrison Troops** quest shows **Talk to the garrison commander** on the main castle menu (as in towns), not only at Approach the gates |
 | Market and trade | Yes | No | Yes, smaller. Starts with 25% of the nearest reachable same-culture town's goods, falling back to the nearest reachable town. Prices follow the castle's own supply and demand, and the Trickle Down trade perk works there, as in towns. AI lords sell loot there and travel there to buy food, as they do in towns |
 | Own production | From its villages | None | 20% of its villages' output, on top of what they send to their town |
 | Tavern | Yes | No | Yes, using the town tavern scene |
@@ -35,7 +35,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Town healing perks | Yes | No | Yes |
 | Smithy | Yes, with smithing orders | No | Yes, without smithing orders |
 | Siege food from the market | Yes | No | Yes |
-| Merchant, artisan and village quests | Yes | None | A selection that fits a castle: village **Deliver a Herd** and **Family Feud** via castle villages, **Artisan Can't Sell** deliveries to a town or covered castle, and the other castle quest toggles. Blocked market-gate entry for a herd or artisan delivery to that castle offers **Deliver Herd to Guards** / **Deliver Items to Guards** (half reward). If the castle loses CMT coverage, those quests and open issues cancel softly with a journal note (no fail penalties; herd animals are kept); turning off only a quest MCM toggle does not |
+| Merchant, artisan and village quests | Yes | None | A selection that fits a castle: village **Deliver a Herd** and **Family Feud** via castle villages, **Artisan Can't Sell** to a town or covered castle, and the other castle quest toggles. Guard delivery options appear only while that quest is active and the market gate is blocked. If the castle loses CMT coverage, those quests and open issues cancel softly with a journal note (no fail penalties; herd animals are kept; failed cancels retry without mixing castles); turning off only a quest MCM toggle does not |
 | Training for you and your companions | No | No | Skills and attributes, for gold and influence, with a cooldown |
 | Arena and tournaments | Yes | No | No |
 | Walking the streets in third person | Yes | No | No |
@@ -52,7 +52,7 @@ Every town feature was weighed against a few rules. A feature was included only 
 3. **Towns remain the economic centres.** A castle's villages still deliver all their goods to their town. The castle gains its own share of production on top, and sells any surplus to its town, as villagers do. Towns never lose stock, prosperity or stability because of this mod.
 4. **Only what a castle can actually host.** Castles have no arena and no town streets in the game. Arenas, tournaments, town streets to walk in third person, and the quests that depend on them were left out on purpose, rather than added in a broken state. The base game's **Take a walk around the castle** stays. A castle tavern uses the town tavern scene, so it is included.
 5. **A lord's seat, not a pleasure district.** Brothels from other mods are kept out of castles.
-6. **Optional and reversible.** Most features have their own switch. Town-style castle entry and the **Go to the castle** menu have none; they follow **Enable castle markets** and the two **Apply to** switches. Turning a feature off returns the castles to vanilla and removes only what the mod added. One-time seeded companions remain as ordinary game companions and move out of castles once they are free to move; they are not deleted. **Keep brothels out** is the other deliberate exception: it is independent of the master switch and removes any castle location named `brothel` until its own switch is turned off. Skills and attributes gained from castle training are not taken back either; they are your heroes' own progress.
+6. **Optional and reversible.** Most features have their own switch. Town-style castle entry and the **Go to the castle** menu have none; they follow **Enable castle markets** and the two **Apply to** switches. Turning coverage off returns the castles to vanilla and removes only what the mod added; active castle quests and open issues for that castle cancel softly first. One-time seeded companions remain as ordinary game companions and move out of castles once they are free to move; they are not deleted. **Keep brothels out** is the other deliberate exception: it is independent of the master switch and removes any castle location named `brothel` until its own switch is turned off. Skills and attributes gained from castle training are not taken back either; they are your heroes' own progress.
 
 ## Castle training
 
@@ -87,7 +87,7 @@ All values and features can be changed in the game through [Mod Configuration Me
 
 | Dependency | Tested version | Expected to work with |
 |---|---|---|
-| Mount & Blade II: Bannerlord | 1.4.8 | 1.5.x |
+| Mount & Blade II: Bannerlord | 1.4.8 | 1.4.x and 1.5.x |
 | War Sails (NavalDLC), optional | 1.2.8 | 1.2.x |
 | [Bannerlord Software Extender (BLSE)][blse], optional | 1.7.5 | 1.x |
 | [Harmony][harmony] | 2.4.2 | 2.x |
@@ -96,6 +96,8 @@ All values and features can be changed in the game through [Mod Configuration Me
 | [Mod Configuration Menu v5 (MCM)][mcm] | 5.13.1 | 5.x |
 
 This mod needs [Harmony][harmony] and [MCM][mcm] directly. [MCM][mcm] in turn needs [ButterLib][butterlib] and [UIExtenderEx][uiextenderex].
+
+Built and tested on Bannerlord **1.4.8**. The expected game versions are **1.4.x** and **1.5.x**. Players have reported it working on 1.5.x betas (including 1.5.5); that is community confirmation, not a full retest of every feature on 1.5.
 
 [BLSE][blse] is optional. As [Harmony][harmony]'s page notes, it is not required on Steam, GOG or Epic, and none of the mods above require it there. This mod does not use it either. BLSE improves mod load-order sorting and crash reporting, and the Xbox / PC Game Pass version of the game needs it.
 
@@ -133,6 +135,7 @@ The mod adds no save types of its own, so a save still loads without it. To retu
 
 1. Load the campaign. In [MCM][mcm], turn off **Enable castle markets**.
 2. Let three or more in-game days pass. Each castle cleans up on its daily update:
+   - active castle quests and open issues tied to that castle are cancelled softly (journal note, no fail penalties; herd animals are kept) before notables leave;
    - workshops you own in the castle are sold to one of its notables at the base game's price, or to a notable of the nearest town if none is left. Their warehouse goods go to your party if you are in the castle, to the castle stash if your clan owns it, and are otherwise sold at the castle's price;
    - the tavern, mod workshops and castle Marketplace are removed;
    - the goods and prosperity the mod added are taken back;

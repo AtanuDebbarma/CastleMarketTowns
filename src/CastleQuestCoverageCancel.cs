@@ -64,19 +64,88 @@ namespace CastleMarketTowns
             }
         }
 
+        // castleId|questId — scoped so retries for one castle cannot cancel another castle's failures.
+        internal static string QuestFailureKey(Settlement castle, QuestBase quest)
+        {
+            if (castle == null || quest == null || string.IsNullOrEmpty(quest.StringId))
+            {
+                return null;
+            }
+
+            return castle.StringId + "|" + quest.StringId;
+        }
+
+        // castleId|ownerId|issueType
+        internal static string IssueFailureKey(Settlement castle, IssueBase issue)
+        {
+            if (castle == null || issue == null)
+            {
+                return null;
+            }
+
+            Hero owner = issue.IssueOwner;
+            string ownerId = owner == null ? "?" : owner.StringId;
+            return castle.StringId + "|" + ownerId + "|" + issue.GetType().FullName;
+        }
+
+        internal static void ClearFailuresForCastle(Settlement castle, HashSet<string> failedQuestIds, HashSet<string> failedIssueKeys)
+        {
+            if (castle == null)
+            {
+                return;
+            }
+
+            string prefix = castle.StringId + "|";
+            RemovePrefixed(failedQuestIds, prefix);
+            RemovePrefixed(failedIssueKeys, prefix);
+        }
+
+        private static void RemovePrefixed(HashSet<string> values, string prefix)
+        {
+            if (values == null || values.Count == 0)
+            {
+                return;
+            }
+
+            List<string> remove = new List<string>();
+            foreach (string value in values)
+            {
+                if (value != null && value.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    remove.Add(value);
+                }
+            }
+
+            for (int i = 0; i < remove.Count; i++)
+            {
+                values.Remove(remove[i]);
+            }
+        }
+
         // Returns true when every matched quest/issue cancelled successfully.
-        internal static bool CancelForLostCoverage(Settlement settlement)
+        // failedQuestIds / failedIssueKeys retain castle-scoped identities; retryStoredFailures includes them after givers move.
+        internal static bool CancelForLostCoverage(Settlement settlement, HashSet<string> failedQuestIds, HashSet<string> failedIssueKeys, bool retryStoredFailures)
         {
             if (settlement == null || !settlement.IsCastle || Campaign.Current == null)
             {
                 return true;
             }
 
+            if (failedQuestIds == null)
+            {
+                failedQuestIds = new HashSet<string>();
+            }
+
+            if (failedIssueKeys == null)
+            {
+                failedIssueKeys = new HashSet<string>();
+            }
+
             TextObject log = new TextObject("{=cmt_quest_cancel_coverage}{SETTLEMENT} no longer has a castle market, so this task there was called off.");
             log.SetTextVariable("SETTLEMENT", settlement.EncyclopediaLinkWithName);
 
-            bool ok = CancelQuests(settlement, log);
-            if (!CancelIssues(settlement, log))
+            bool ok = CancelQuests(settlement, log, failedQuestIds, retryStoredFailures);
+            if (!CancelIssues(settlement, log, failedIssueKeys, retryStoredFailures))
             {
                 ok = false;
             }
@@ -84,7 +153,7 @@ namespace CastleMarketTowns
             return ok;
         }
 
-        private static bool CancelQuests(Settlement settlement, TextObject log)
+        private static bool CancelQuests(Settlement settlement, TextObject log, HashSet<string> failedQuestIds, bool retryStoredFailures)
         {
             if (Campaign.Current.QuestManager == null)
             {
@@ -94,7 +163,13 @@ namespace CastleMarketTowns
             List<QuestBase> toCancel = new List<QuestBase>();
             foreach (QuestBase quest in Campaign.Current.QuestManager.Quests)
             {
-                if (quest != null && quest.IsOngoing && TiesToCastle(quest, settlement))
+                if (quest == null || !quest.IsOngoing || !IsTrackedQuest(quest.GetType()))
+                {
+                    continue;
+                }
+
+                string key = QuestFailureKey(settlement, quest);
+                if (TiesToCastle(quest, settlement) || (retryStoredFailures && key != null && failedQuestIds.Contains(key)))
                 {
                     toCancel.Add(quest);
                 }
@@ -103,8 +178,21 @@ namespace CastleMarketTowns
             bool ok = true;
             foreach (QuestBase quest in toCancel)
             {
-                if (!TryCancelQuest(quest, log))
+                string key = QuestFailureKey(settlement, quest);
+                if (TryCancelQuest(quest, log))
                 {
+                    if (key != null)
+                    {
+                        failedQuestIds.Remove(key);
+                    }
+                }
+                else
+                {
+                    if (key != null)
+                    {
+                        failedQuestIds.Add(key);
+                    }
+
                     ok = false;
                 }
             }
@@ -150,7 +238,7 @@ namespace CastleMarketTowns
             }
         }
 
-        private static bool CancelIssues(Settlement settlement, TextObject log)
+        private static bool CancelIssues(Settlement settlement, TextObject log, HashSet<string> failedIssueKeys, bool retryStoredFailures)
         {
             if (Campaign.Current.IssueManager == null || Campaign.Current.IssueManager.Issues == null)
             {
@@ -172,7 +260,8 @@ namespace CastleMarketTowns
                     continue;
                 }
 
-                if (TiesToCastle(issue, settlement))
+                string key = IssueFailureKey(settlement, issue);
+                if (TiesToCastle(issue, settlement) || (retryStoredFailures && key != null && failedIssueKeys.Contains(key)))
                 {
                     toCancel.Add(issue);
                 }
@@ -181,13 +270,23 @@ namespace CastleMarketTowns
             bool ok = true;
             foreach (IssueBase issue in toCancel)
             {
+                string key = IssueFailureKey(settlement, issue);
                 try
                 {
                     issue.CompleteIssueWithCancel(log);
+                    if (key != null)
+                    {
+                        failedIssueKeys.Remove(key);
+                    }
                 }
                 catch (Exception exception)
                 {
                     ok = false;
+                    if (key != null)
+                    {
+                        failedIssueKeys.Add(key);
+                    }
+
                     Debug.Print("Castle Market Towns could not cancel issue after coverage loss: " + exception);
                 }
             }

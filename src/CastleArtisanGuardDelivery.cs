@@ -30,12 +30,13 @@ namespace CastleMarketTowns
         private static readonly FieldInfo AmountField = QuestType == null ? null : AccessTools.Field(QuestType, "_amountOfRawGoodsToBeDelivered");
         private static readonly FieldInfo DeliveredField = QuestType == null ? null : AccessTools.Field(QuestType, "_deliveredRawGoods");
         private static readonly FieldInfo ItemField = QuestType == null ? null : AccessTools.Field(QuestType, "_rawMaterialsToBeDelivered");
+        private static readonly MethodInfo DeliverFullyMethod = QuestType == null ? null : AccessTools.Method(QuestType, "DeliverItemsFullyOnConsequence");
 
         private static string _returnMenuId = DeniedMenuId;
 
         internal static void AddMenus(CampaignGameStarter starter)
         {
-            if (QuestType == null || TargetSettlementField == null || RewardGoldField == null || AmountField == null || DeliveredField == null || ItemField == null)
+            if (QuestType == null || TargetSettlementField == null || RewardGoldField == null || AmountField == null || DeliveredField == null || ItemField == null || DeliverFullyMethod == null)
             {
                 return;
             }
@@ -227,18 +228,9 @@ namespace CastleMarketTowns
                 return;
             }
 
-            ItemObject item = Product(quest);
-            int need = Remaining(quest);
-            if (item == null || need <= 0 || PartyBase.MainParty == null || PartyBase.MainParty.ItemRoster == null)
-            {
-                GameMenu.SwitchToMenu(_returnMenuId);
-                return;
-            }
-
-            PartyBase.MainParty.ItemRoster.AddToCounts(item, -need);
-            DeliveredField.SetValue(quest, AmountNeeded(quest));
+            // Half reward first; vanilla DeliverItemsFullyOnConsequence removes goods, updates the journal task, and completes.
             RewardGoldField.SetValue(quest, ReducedReward(quest));
-            quest.CompleteQuestWithSuccess();
+            DeliverFullyMethod.Invoke(quest, null);
             GameMenu.SwitchToMenu(OutsideMenuId);
         }
 
