@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Reflection;
 using HarmonyLib;
 using TaleWorlds.CampaignSystem;
@@ -10,12 +11,14 @@ using TaleWorlds.Localization;
 
 namespace CastleMarketTowns
 {
-    // When a prepared castle loses CMT coverage, soft-cancel ongoing quests tied to it (and open issues from its notables).
-    // Individual MCM quest toggles do not call this — notables stay, so those quests can still finish.
+    // When a castle loses CMT coverage, soft-cancel ongoing quests tied to it (and open issues from its notables).
+    // Runs from Cleanup even if market preparation never finished. Individual MCM quest toggles do not call this.
     internal static class CastleQuestCoverageCancel
     {
         private static readonly Type HerdQuestType = AccessTools.Inner(typeof(HeadmanNeedsToDeliverAHerdIssueBehavior), "HeadmanNeedsToDeliverAHerdIssueQuest");
         private static readonly FieldInfo HerdAnimalCountField = HerdQuestType == null ? null : AccessTools.Field(HerdQuestType, "_animalCountToDeliver");
+        // CampaignTime.NumTicks is internal; _numTicks is the saved identity used across load and languages.
+        private static readonly FieldInfo CampaignTimeNumTicksField = AccessTools.Field(typeof(CampaignTime), "_numTicks");
 
         private static readonly Type[] TrackedQuestTypes = BuildQuestTypes();
         private static readonly Type[] TrackedIssueTypes = BuildIssueTypes();
@@ -75,7 +78,7 @@ namespace CastleMarketTowns
             return castle.StringId + "|" + quest.StringId;
         }
 
-        // castleId|ownerId|issueType
+        // castleId|ownerId|issueType|creationTicks — ticks distinguish a later same-type issue on the same notable.
         internal static string IssueFailureKey(Settlement castle, IssueBase issue)
         {
             if (castle == null || issue == null)
@@ -85,7 +88,94 @@ namespace CastleMarketTowns
 
             Hero owner = issue.IssueOwner;
             string ownerId = owner == null ? "?" : owner.StringId;
-            return castle.StringId + "|" + ownerId + "|" + issue.GetType().FullName;
+            return castle.StringId + "|" + ownerId + "|" + issue.GetType().FullName + "|" + IssueCreationTicks(issue);
+        }
+
+        private static string IssueCreationTicks(IssueBase issue)
+        {
+            if (issue == null || CampaignTimeNumTicksField == null)
+            {
+                return "?";
+            }
+
+            object ticks = CampaignTimeNumTicksField.GetValue(issue.IssueCreationTime);
+            return ticks == null ? "?" : Convert.ToInt64(ticks, CultureInfo.InvariantCulture).ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static bool HasFailedIssueKey(HashSet<string> failedIssueKeys, Settlement castle, IssueBase issue)
+        {
+            if (failedIssueKeys == null || failedIssueKeys.Count == 0)
+            {
+                return false;
+            }
+
+            string key = IssueFailureKey(castle, issue);
+            return key != null && failedIssueKeys.Contains(key);
+        }
+
+        private static void ClearIssueFailureKeys(HashSet<string> failedIssueKeys, Settlement castle, IssueBase issue)
+        {
+            if (failedIssueKeys == null)
+            {
+                return;
+            }
+
+            string key = IssueFailureKey(castle, issue);
+            if (key != null)
+            {
+                failedIssueKeys.Remove(key);
+            }
+        }
+
+        // Drop old castle|owner|type keys (no ticks): they can false-match a later same-type issue.
+        private static void DiscardLegacyIssueFailureKeys(HashSet<string> failedIssueKeys, Settlement castle)
+        {
+            if (failedIssueKeys == null || failedIssueKeys.Count == 0 || castle == null)
+            {
+                return;
+            }
+
+            string prefix = castle.StringId + "|";
+            List<string> remove = null;
+            foreach (string key in failedIssueKeys)
+            {
+                if (key == null || !key.StartsWith(prefix, StringComparison.Ordinal) || !IsLegacyIssueFailureKey(key))
+                {
+                    continue;
+                }
+
+                if (remove == null)
+                {
+                    remove = new List<string>();
+                }
+
+                remove.Add(key);
+            }
+
+            if (remove == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < remove.Count; i++)
+            {
+                failedIssueKeys.Remove(remove[i]);
+            }
+        }
+
+        private static bool IsLegacyIssueFailureKey(string key)
+        {
+            int pipes = 0;
+            for (int i = 0; i < key.Length; i++)
+            {
+                if (key[i] == '|')
+                {
+                    pipes++;
+                }
+            }
+
+            // Legacy: castle|owner|type (2 pipes). Current: castle|owner|type|ticks (3 pipes).
+            return pipes == 2;
         }
 
         internal static void ClearFailuresForCastle(Settlement castle, HashSet<string> failedQuestIds, HashSet<string> failedIssueKeys)
@@ -143,6 +233,8 @@ namespace CastleMarketTowns
 
             TextObject log = new TextObject("{=cmt_quest_cancel_coverage}{SETTLEMENT} no longer has a castle market, so this task there was called off.");
             log.SetTextVariable("SETTLEMENT", settlement.EncyclopediaLinkWithName);
+
+            DiscardLegacyIssueFailureKeys(failedIssueKeys, settlement);
 
             bool ok = CancelQuests(settlement, log, failedQuestIds, retryStoredFailures);
             if (!CancelIssues(settlement, log, failedIssueKeys, retryStoredFailures))
@@ -260,8 +352,7 @@ namespace CastleMarketTowns
                     continue;
                 }
 
-                string key = IssueFailureKey(settlement, issue);
-                if (TiesToCastle(issue, settlement) || (retryStoredFailures && key != null && failedIssueKeys.Contains(key)))
+                if (TiesToCastle(issue, settlement) || (retryStoredFailures && HasFailedIssueKey(failedIssueKeys, settlement, issue)))
                 {
                     toCancel.Add(issue);
                 }
@@ -274,10 +365,7 @@ namespace CastleMarketTowns
                 try
                 {
                     issue.CompleteIssueWithCancel(log);
-                    if (key != null)
-                    {
-                        failedIssueKeys.Remove(key);
-                    }
+                    ClearIssueFailureKeys(failedIssueKeys, settlement, issue);
                 }
                 catch (Exception exception)
                 {

@@ -96,6 +96,13 @@ namespace CastleMarketTowns
             return settlement != null && (settlement.IsTown || (CastleImprovedGarrisons.Active && Covered(settlement)));
         }
 
+        // AutoTrader only: covered castles use the town merchant path (Town.Gold / town trade screen), never Village.Gold.
+        // When support is not Ready (API mismatch / runtime disable), return the real IsTown so AutoTrader stays vanilla.
+        public static bool AutoTraderTradesAsTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || (CastleAutoTrader.Operational && Covered(settlement)));
+        }
+
         public static bool RulingIncomeAsTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || (Covered(settlement) && settlement.Town.Workshops != null));

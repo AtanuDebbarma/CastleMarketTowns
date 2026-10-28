@@ -10,6 +10,8 @@ Some castle menu lines reuse the base game's own text, such as **Trade**, **Recr
 
 The Hot Butter options in the castle tavern use Hot Butter's own IDs, which start with `pompa`. They belong to Hot Butter and are not in the file. You may translate them in your module as well; that also translates the same options in towns.
 
+The castle **Automatically trade wares** button (when AutoTrader is installed and **AutoTrader support** is on) uses AutoTrader's own ID `ATTrade`. It belongs to AutoTrader and is not in the file. CMT only adds `cmt_mcm_autotrader_support_name`, `cmt_mcm_autotrader_support_hint` and `cmt_error_autotrader`.
+
 ## Making a translation module
 
 A translation module contains only text files. Example for Russian:
@@ -97,7 +99,7 @@ For a language the game does not list here, copy the name from the `language_dat
 ## Testing
 
 1. Enable your module after Castle Market Towns in the launcher and choose your language in the game's options.
-2. Check the **Castle Market Towns** page in MCM under **Options > Mod Options**, and the castle menus: **Go to the castle**, **Visit the castle trainers**, **Visit the castle tavern**, **Back to the castle**, wartime **Disguise yourself…**, and (only with an active **Deliver a Herd** or **Artisan Can't Sell** delivery to a blocked castle market gate) **Deliver Herd to Guards** / **Deliver Items to Guards** and their **Accept** / **Reject** offer screens. **Talk to the garrison commander** and ordinary entry-denied lines reuse the base game's strings (`FirEOQaI` and vanilla denial text); they need no CMT translation IDs. Coverage-loss cancels use `cmt_quest_cancel_coverage`.
+2. Check the **Castle Market Towns** page in MCM under **Options > Mod Options** (including **AutoTrader support** if you translate that), and the castle menus: **Go to the castle**, **Visit the castle trainers**, **Visit the castle tavern**, **Back to the castle**, wartime **Disguise yourself…**, and (only with an active **Deliver a Herd** or **Artisan Can't Sell** delivery to a blocked castle market gate) **Deliver Herd to Guards** / **Deliver Items to Guards** and their **Accept** / **Reject** offer screens. **Talk to the garrison commander** and ordinary entry-denied lines reuse the base game's strings (`FirEOQaI` and vanilla denial text); they need no CMT translation IDs. Coverage-loss cancels use `cmt_quest_cancel_coverage`. **Automatically trade wares** uses AutoTrader's `ATTrade` when that mod is present.
 3. A line that still shows in English means its ID is missing or misspelled in your file. If the game log reports an XML error, check the escaping rules above.
 
 The translation only changes text. It adds nothing to saves, so it can be added or removed at any time.

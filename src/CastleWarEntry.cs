@@ -180,6 +180,18 @@ namespace CastleMarketTowns
                     return;
                 }
 
+                // Same as CanMainHeroEnterTown: your own settlement walks in; crime does not force FaceCharges.
+                if (settlement.OwnerClan != null && settlement.OwnerClan == Hero.MainHero.Clan)
+                {
+                    accessDetails.AccessLevel = SettlementAccessModel.AccessLevel.FullAccess;
+                    accessDetails.AccessMethod = SettlementAccessModel.AccessMethod.Direct;
+                    accessDetails.AccessLimitationReason = SettlementAccessModel.AccessLimitationReason.None;
+                    accessDetails.LimitedAccessSolution = SettlementAccessModel.LimitedAccessSolution.None;
+                    accessDetails.PreliminaryActionType = SettlementAccessModel.PreliminaryActionType.None;
+                    accessDetails.PreliminaryActionObligation = SettlementAccessModel.PreliminaryActionObligation.None;
+                    return;
+                }
+
                 IFaction playerFaction = Hero.MainHero.MapFaction;
                 IFaction settlementFaction = settlement.MapFaction;
                 bool atWar = playerFaction != null && settlementFaction != null && playerFaction.IsAtWarWith(settlementFaction);

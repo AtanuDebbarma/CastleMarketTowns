@@ -124,8 +124,8 @@ namespace CastleMarketTowns
         {
             args.optionLeaveType = GameMenuOption.LeaveType.Submenu;
             Settlement settlement = Settlement.CurrentSettlement;
-            // Only when the public gate is closed (denial, disguise, or FaceCharges) — not while entry is free.
-            if (settlement == null || !CastleTownRules.Covered(settlement) || !CastleWarEntry.IsBlockedMarketEntry(settlement))
+            // Active herd delivery + blocked gate only. Coverage switches do not hide this while the quest remains.
+            if (settlement == null || !settlement.IsCastle || !CastleWarEntry.IsBlockedMarketEntry(settlement))
             {
                 return false;
             }

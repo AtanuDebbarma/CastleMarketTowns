@@ -53,6 +53,7 @@ namespace CastleMarketTowns
             CaravansVisitCastles = true;
             HotButterTavernOptions = true;
             ImprovedGarrisonsSupport = true;
+            AutoTraderSupport = true;
             CastleCompanions = true;
             CompanionArrivalPercent = 100;
             CompanionDeparturePercent = 10;
@@ -138,6 +139,10 @@ namespace CastleMarketTowns
         [SettingPropertyBool("{=cmt_mcm_improved_garrisons_support_name}Improved Garrisons support", Order = 11, RequireRestart = false, HintText = "{=cmt_mcm_improved_garrisons_support_hint}Only matters with Improved Garrisons installed. On by default. Its button moves into Go to the castle, its tooltips show castle tariffs and tax, and its parties recruit and trade at castles as in towns. Its files are never changed.")]
         [SettingPropertyGroup(GroupGeneral)]
         public bool ImprovedGarrisonsSupport { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_autotrader_support_name}AutoTrader support", Order = 12, RequireRestart = false, HintText = "{=cmt_mcm_autotrader_support_hint}Only matters with AutoTrader installed. On by default. Covered castle menus get Automatically trade wares next to Trade; AutoTrader uses the castle market and its own settings (Alt+A). Towns, villages and caravans are unchanged. If AutoTrader is missing or its API changes, this does nothing and the game log says so. Its files are never changed.")]
+        [SettingPropertyGroup(GroupGeneral)]
+        public bool AutoTraderSupport { get; set; }
 
         [SettingPropertyBool("{=cmt_mcm_castle_companions_name}Companions in castle taverns", IsToggle = true, Order = 0, RequireRestart = false, HintText = "{=cmt_mcm_castle_companions_hint}On by default. Unhired companions also appear in castle taverns: a small group once, then companions move between towns and nearby castles over time. Works with the base game and most companion mods. Turn this off to send them back to towns, or if a companion mod misbehaves in castles. Needs Add a tavern.")]
         [SettingPropertyGroup(GroupCastleCompanions)]

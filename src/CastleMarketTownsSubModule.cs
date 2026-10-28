@@ -196,6 +196,15 @@ namespace CastleMarketTowns
             {
                 TaleWorlds.Library.Debug.Print("Castle Market Towns could not add They Married support: " + exception.Message);
             }
+
+            try
+            {
+                CastleAutoTrader.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not add AutoTrader support: " + exception.Message);
+            }
         }
 
         protected override void OnGameStart(Game game, IGameStarter gameStarter)

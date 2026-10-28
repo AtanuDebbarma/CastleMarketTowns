@@ -36,6 +36,8 @@
     <string id="cmt_mcm_hot_butter_tavern_options_hint" text="Only matters with Hot Butter installed. On by default. Castle taverns get Hot Butter's tavern options, with the same rules as in towns." />
     <string id="cmt_mcm_improved_garrisons_support_name" text="Improved Garrisons support" />
     <string id="cmt_mcm_improved_garrisons_support_hint" text="Only matters with Improved Garrisons installed. On by default. Its button moves into Go to the castle, its tooltips show castle tariffs and tax, and its parties recruit and trade at castles as in towns. Its files are never changed." />
+    <string id="cmt_mcm_autotrader_support_name" text="AutoTrader support" />
+    <string id="cmt_mcm_autotrader_support_hint" text="Only matters with AutoTrader installed. On by default. Covered castle menus get Automatically trade wares next to Trade; AutoTrader uses the castle market and its own settings (Alt+A). Towns, villages and caravans are unchanged. If AutoTrader is missing or its API changes, this does nothing and the game log says so. Its files are never changed." />
     <string id="cmt_mcm_castle_companions_name" text="Companions in castle taverns" />
     <string id="cmt_mcm_castle_companions_hint" text="On by default. Unhired companions also appear in castle taverns: a small group once, then companions move between towns and nearby castles over time. Works with the base game and most companion mods. Turn this off to send them back to towns, or if a companion mod misbehaves in castles. Needs Add a tavern." />
     <string id="cmt_mcm_companion_arrival_percent_name" text="Arrival chance percent" />
@@ -226,6 +228,7 @@
     <!-- Error messages (the technical error text shown after them stays in English) -->
     <string id="cmt_error_ransom_failed" text="Prisoners could not be ransomed." />
     <string id="cmt_error_hot_butter_tavern" text="Hot Butter could not run in the castle tavern." />
+    <string id="cmt_error_autotrader" text="AutoTrader could not run at this castle." />
     <string id="cmt_error_tavern_open" text="The castle tavern could not be opened." />
   </strings>
 </base>

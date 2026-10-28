@@ -701,6 +701,8 @@ namespace CastleMarketTowns
             starter.AddGameMenuOption("castle", "castle_market_towns_tavern_district", "{=cmt_menu_visit_castle_tavern}Visit the castle tavern", TavernDistrictCondition, TavernDistrictConsequence, false, CastleMenuIndexOf(starter, "manage_production", 3), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_recruit", "{=E31IJyqs}Recruit troops", RecruitCondition, RecruitConsequence, false, CastleMenuIndexOf(starter, "open_stash", 5), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_trade", "{=GmcgoiGy}Trade", TradeCondition, TradeConsequence, false, CastleMenuIndexOf(starter, "open_stash", 6), false, null);
+            // After Trade, like AutoTrader's town option sits near Trade.
+            CastleAutoTrader.AddMenus(starter, CastleMenuIndexOf(starter, "castle_market_towns_trade", CastleMenuIndexOf(starter, "open_stash", 6) + 1) + 1);
             starter.AddGameMenuOption("castle", "castle_market_towns_smithy", "{=McHsHbH8}Enter smithy", SmithyCondition, SmithyConsequence, false, CastleMenuIndexOf(starter, "take_a_walk_around_the_castle", 9), false, null);
             starter.AddGameMenuOption("castle", "castle_market_towns_warehouse", "{=LK4kNZkb}Enter the warehouse", CastleWorkshops.WarehouseCondition, CastleWorkshops.WarehouseConsequence, false, CastleMenuIndexOf(starter, "open_stash", 7), false, null);
 
@@ -1445,28 +1447,25 @@ namespace CastleMarketTowns
 
         private void Cleanup(Settlement settlement)
         {
-            // Soft-cancel CMT-toggled quests/issues tied to this castle before notables leave. MCM quest toggles alone do not call Cleanup.
-            // Retries when an earlier pass left failures in _questCancelPending (saved across load).
+            // Soft-cancel CMT-toggled quests/issues tied to this castle before notables leave — even if Prepare never marked _prepared
+            // (e.g. market setup threw after notables were added). MCM quest toggles alone do not call Cleanup.
             string settlementId = settlement.StringId;
             bool cancelDone = true;
-            if (_prepared.Contains(settlementId) || _questCancelPending.Contains(settlementId))
+            bool retryStoredFailures = _questCancelPending.Contains(settlementId);
+            bool cancelled = false;
+            Step("cancel castle-market quests for", settlement, delegate
             {
-                bool retryStoredFailures = _questCancelPending.Contains(settlementId);
-                bool cancelled = false;
-                Step("cancel castle-market quests for", settlement, delegate
-                {
-                    cancelled = CastleQuestCoverageCancel.CancelForLostCoverage(settlement, _failedCancelQuestIds, _failedCancelIssueKeys, retryStoredFailures);
-                });
-                cancelDone = cancelled;
-                if (cancelled)
-                {
-                    _questCancelPending.Remove(settlementId);
-                    CastleQuestCoverageCancel.ClearFailuresForCastle(settlement, _failedCancelQuestIds, _failedCancelIssueKeys);
-                }
-                else
-                {
-                    _questCancelPending.Add(settlementId);
-                }
+                cancelled = CastleQuestCoverageCancel.CancelForLostCoverage(settlement, _failedCancelQuestIds, _failedCancelIssueKeys, retryStoredFailures);
+            });
+            cancelDone = cancelled;
+            if (cancelled)
+            {
+                _questCancelPending.Remove(settlementId);
+                CastleQuestCoverageCancel.ClearFailuresForCastle(settlement, _failedCancelQuestIds, _failedCancelIssueKeys);
+            }
+            else
+            {
+                _questCancelPending.Add(settlementId);
             }
 
             Step("track the goods of", settlement, delegate { ClampLedgers(settlement); });
