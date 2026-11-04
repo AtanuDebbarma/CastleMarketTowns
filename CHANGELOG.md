@@ -7,7 +7,7 @@
 - **Castle Food Stocks from the market.** Outside sieges, leftover market food is converted into daily Food Stocks after ordinary consumption via `SoldItems` only (no direct `FoodStocks +=`, so units are not double-credited). Categories match the food taken. Siege market food keeps its own setting.
 - **War Sails.** Landlocked **covered castles** use land trade-score assumptions and correct `isTargetingPort`; coastal price selection while scoring uses the candidate town. Vanilla towns keep vanilla naval targeting/scoring.
 - **Origin tracking.** Campaign-safe reset/migration; repairs partial origin data; spawn/cap use `HomeSettlement ?? BornSettlement`; size scaling requires a saved castle origin.
-- **Caravan Party Limit Increased Fixed (Mod Support).** Optional. When that mod is enabled, MCM shows **Castle caravan party size** (50–100%, default 80%) for caravans that started at a covered castle.
+- **[Caravan Party Limit Increased Fixed](https://www.nexusmods.com/mountandblade2bannerlord/mods/14505) (Mod Support).** Optional. When that mod is enabled, MCM shows **Castle caravan party size** (50–100%, default 80%) for caravans that started at a covered castle.
 - **MCM / Harmony.** Visibility filter catches its own errors and does not suppress other mods' MCM discovery exceptions. Key caravan redirects log when expected getter replacements are missing.
 - Soft save migration for caravan origin records. Towns and uncovered castles stay vanilla.
 

@@ -25,7 +25,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Merchants and artisans | Yes | None | 2 merchants and 2 artisans |
 | Workshops | 4 slots | None | 2 slots. Bought from castle notables and managed from the clan screen like a town workshop, with its own warehouse |
 | Workshops you can own | Clan tier + 1, across all towns | None, castles have no workshops | Clan tier + 1 across all castles, a limit separate from towns that mods changing the town limit do not affect. Town and castle limits each have their own optional extra, and the castle limit can be set to a fixed number or removed |
-| Caravans | Formed by town merchants | None | Formed by castle merchants (default two active caravans per covered castle; optional unlimited). Caravans also trade at castles, with anti-loop / congestion scoring. Optional size percent when CaravanPartyLimitIncreasedFixed is installed |
+| Caravans | Formed by town merchants | None | Formed by castle merchants (default two active caravans per covered castle; optional unlimited). Caravans also trade at castles, with anti-loop / congestion scoring. Optional size percent when [Caravan Party Limit Increased Fixed][cpi] is installed |
 | Volunteers from notables | Yes | None | Yes, at 65% of a town's speed, 50% chance of noble troops |
 | Noble recruits from villages | No | Yes | Yes, unchanged |
 | Prosperity | About 1,700 to 5,600 | About 420 to 1,100 | Raised to at least 1,000, grows with trade |
@@ -219,3 +219,5 @@ Mount & Blade II: Bannerlord is a trademark of TaleWorlds Entertainment. This pr
 [autotrader]: https://www.nexusmods.com/mountandblade2bannerlord/mods/135
 [repo]: https://github.com/AtanuDebbarma/CastleMarketTowns
 [nexus]: https://www.nexusmods.com/mountandblade2bannerlord/mods/14182
+[cpi]: https://www.nexusmods.com/mountandblade2bannerlord/mods/14505
+[cte]: https://www.nexusmods.com/mountandblade2bannerlord/mods/14503
