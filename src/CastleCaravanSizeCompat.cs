@@ -140,9 +140,9 @@ namespace CastleMarketTowns
             }
 
             int percent = settings.CastleCaravanPartySizePercent;
-            if (percent < 80)
+            if (percent < 50)
             {
-                percent = 80;
+                percent = 50;
             }
 
             if (percent > 100)

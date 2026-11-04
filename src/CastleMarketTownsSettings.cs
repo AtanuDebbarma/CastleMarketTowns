@@ -288,7 +288,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupCastleMarket)]
         public int CaravanBonusPercent { get; set; }
 
-        [SettingPropertyInteger("{=cmt_mcm_castle_caravan_party_size_percent_name}Castle caravan party size", 80, 100, "0", Order = 9, RequireRestart = false, HintText = "{=cmt_mcm_castle_caravan_party_size_percent_hint}Size of caravans that started at a covered castle, as a percent of Caravan Party Limit Increased Fixed. Default 80. Shown only when that mod is enabled.")]
+        [SettingPropertyInteger("{=cmt_mcm_castle_caravan_party_size_percent_name}Castle caravan party size", 50, 100, "0", Order = 9, RequireRestart = false, HintText = "{=cmt_mcm_castle_caravan_party_size_percent_hint}Size of caravans that started at a covered castle, as a percent of Caravan Party Limit Increased Fixed. Default 80. Shown only when that mod is enabled.")]
         [SettingPropertyGroup(GroupCastleMarket + "/{=cmt_mcm_group_cpi_support}" + CpiSupportGroupLeaf)]
         public int CastleCaravanPartySizePercent { get; set; }
 
