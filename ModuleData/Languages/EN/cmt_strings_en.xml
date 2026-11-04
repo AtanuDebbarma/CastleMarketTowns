@@ -86,10 +86,18 @@
     <string id="cmt_mcm_export_castle_surplus_hint" text="On by default. Like villagers, the castle sells goods its villages make beyond its reserve to their town and keeps the gold." />
     <string id="cmt_mcm_castle_stock_days_name" text="Castle reserve days" />
     <string id="cmt_mcm_castle_stock_days_hint" text="How many days of its own production or consumption, whichever is larger, the castle keeps of each good it produces before selling the rest to its town. Default 10." />
+    <string id="cmt_mcm_unlimited_castle_origin_caravans_name" text="Unlimited caravans from each castle" />
+    <string id="cmt_mcm_unlimited_castle_origin_caravans_hint" text="Off by default. On: each castle merchant can form a caravan like a town (1.4.0 behaviour). Off: use the limit below. Loop and food fixes still apply either way." />
+    <string id="cmt_mcm_max_castle_origin_caravans_name" text="Max caravans from each castle" />
+    <string id="cmt_mcm_max_castle_origin_caravans_hint" text="How many active caravans may start from each covered castle. Default 2. Visiting foreign caravans do not count. Merchants stay; only new formation is blocked at the cap. Hidden while Unlimited is on." />
     <string id="cmt_mcm_caravans_favour_low_stock_name" text="Caravans favour low-stock castles" />
-    <string id="cmt_mcm_caravans_favour_low_stock_hint" text="On by default. Caravans rate castles low on goods higher as trade stops, so empty castles fill up. Needs Caravans trade at castles." />
+    <string id="cmt_mcm_caravans_favour_low_stock_hint" text="On by default. Boosts castles that are short of goods the caravan can actually sell or that need food the caravan carries. Needs Caravans trade at castles." />
     <string id="cmt_mcm_caravan_bonus_percent_name" text="Caravan boost percent" />
-    <string id="cmt_mcm_caravan_bonus_percent_hint" text="Largest boost to a caravan's rating of a nearly empty castle. Default 25. It shrinks to 0 as the castle reaches 35 percent of its town's trade goods." />
+    <string id="cmt_mcm_caravan_bonus_percent_hint" text="Largest boost for a real shortage matching the caravan's cargo. Default 25. Loops and crowded castles are also penalised." />
+    <string id="cmt_mcm_group_cpi_support" text="CaravanPartyLimitIncreasedFixed (Mod Support)" />
+    <string id="cmt_mcm_castle_caravan_party_size_percent_name" text="Castle caravan party size" />
+    <string id="cmt_mcm_castle_caravan_party_size_percent_hint" text="Size of caravans that started at a covered castle, as a percent of Caravan Party Limit Increased Fixed. Default 80. Shown only when that mod is enabled." />
+    <string id="cmt_caravan_size_compat" text="Castle caravan party limit" />
     <string id="cmt_mcm_siege_food_from_market_name" text="Siege food from the castle market" />
     <string id="cmt_mcm_siege_food_from_market_hint" text="On by default. A besieged castle that runs out of food uses its market's food, as a town does." />
     <string id="cmt_mcm_lords_buy_castle_food_name" text="Lords buy food at castles" />

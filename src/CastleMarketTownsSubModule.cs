@@ -207,6 +207,25 @@ namespace CastleMarketTowns
             }
         }
 
+        public override void OnGameInitializationFinished(Game game)
+        {
+            base.OnGameInitializationFinished(game);
+            if (!(game.GameType is Campaign))
+            {
+                return;
+            }
+
+            try
+            {
+                CastleCaravanOrigins.EnsureMigrated();
+                CastleCaravanSizeCompat.PatchActiveModel(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not finish caravan compatibility setup: " + exception.Message);
+            }
+        }
+
         protected override void OnGameStart(Game game, IGameStarter gameStarter)
         {
             Campaign campaign = game.GameType as Campaign;

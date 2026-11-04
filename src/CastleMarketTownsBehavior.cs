@@ -83,6 +83,8 @@ namespace CastleMarketTowns
         private string _companionMoveData = "";
         private string _skillTrainingData = "";
         private string _attributeTrainingData = "";
+        private string _caravanOriginData = "";
+        private string _caravanPreviousStopData = "";
         private bool _menusAdded;
 
         public CastleMarketTownsBehavior()
@@ -134,6 +136,8 @@ namespace CastleMarketTowns
                 CastleTraining.PruneSessions();
                 _skillTrainingData = SerializeFloatMap(CastleTraining.LastSkillSession);
                 _attributeTrainingData = SerializeFloatMap(CastleTraining.LastAttributeSession);
+                _caravanOriginData = CastleCaravanOrigins.SerializeOrigins();
+                _caravanPreviousStopData = CastleCaravanOrigins.SerializePreviousStops();
             }
 
             _preparedIds = SyncChunked(dataStore, "CastleMarketTowns_Prepared", _preparedIds);
@@ -156,6 +160,8 @@ namespace CastleMarketTowns
             _companionMoveData = SyncChunked(dataStore, "CastleMarketTowns_CompanionMoves", _companionMoveData);
             _skillTrainingData = SyncChunked(dataStore, "CastleMarketTowns_SkillTraining", _skillTrainingData);
             _attributeTrainingData = SyncChunked(dataStore, "CastleMarketTowns_AttributeTraining", _attributeTrainingData);
+            _caravanOriginData = SyncChunked(dataStore, "CastleMarketTowns_CaravanOrigins", _caravanOriginData);
+            _caravanPreviousStopData = SyncChunked(dataStore, "CastleMarketTowns_CaravanPreviousStops", _caravanPreviousStopData);
 
             if (dataStore.IsLoading)
             {
@@ -177,6 +183,8 @@ namespace CastleMarketTowns
                 LoadFloatMap(_companionMoveData, CastleCompanions.LastMoved);
                 LoadFloatMap(_skillTrainingData, CastleTraining.LastSkillSession);
                 LoadFloatMap(_attributeTrainingData, CastleTraining.LastAttributeSession);
+                CastleCaravanOrigins.LoadOrigins(_caravanOriginData);
+                CastleCaravanOrigins.LoadPreviousStops(_caravanPreviousStopData);
                 if (_ownershipVersion != OwnershipVersion)
                 {
                     foreach (string settlementId in OwnedDailyDefaults)
@@ -228,6 +236,7 @@ namespace CastleMarketTowns
         {
             try
             {
+                CastleCaravanSizeCompat.EnsurePatched();
                 CastleCompanions.DailyTick();
                 if (_companionSeedVersion != CompanionSeedVersion && CastleCompanions.TryInitialSeed())
                 {
@@ -276,6 +285,7 @@ namespace CastleMarketTowns
             }
 
             RunOfficialTownDailyTicks(settlement.Town);
+            Step("feed the castle from its market in", settlement, delegate { CastleCaravanFoodBridge.ApplyRemainingFoodDeficit(settlement.Town); });
             Step("track the goods of", settlement, delegate { ClampLedgers(settlement); });
             if (settings != null && settings.ExportCastleSurplus)
             {

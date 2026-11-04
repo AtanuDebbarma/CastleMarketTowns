@@ -32,6 +32,19 @@ namespace CastleMarketTowns
         public override string FolderName { get { return "CastleMarketTowns"; } }
         public override string FormatType { get { return "json2"; } }
 
+        public override int UIVersion
+        {
+            get { return _uiVersion; }
+        }
+
+        // Friendly leaf / property ids for MCM visibility (no raw marker path segments).
+        internal const string CastleOriginCapSliderProperty = "MaxCastleOriginCaravans";
+        internal const string CastleOriginCapSliderDisplay = "Max caravans from each castle";
+        internal const string CpiSupportGroupLeaf = "CaravanPartyLimitIncreasedFixed (Mod Support)";
+
+        private bool _unlimitedCastleOriginCaravans;
+        private int _uiVersion = 1;
+
         public CastleMarketTownsSettings()
         {
             Enabled = true;
@@ -76,6 +89,9 @@ namespace CastleMarketTowns
             CastleStockDays = 10;
             CaravansFavourLowStock = true;
             CaravanBonusPercent = 25;
+            MaxCastleOriginCaravans = 2;
+            UnlimitedCastleOriginCaravans = false;
+            CastleCaravanPartySizePercent = 80;
             CastleRecruits = true;
             NobleRecruitPercent = 50;
             RecruitPercent = 65;
@@ -241,19 +257,46 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupCastleMarket)]
         public int CastleStockDays { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_caravans_favour_low_stock_name}Caravans favour low-stock castles", Order = 5, RequireRestart = false, HintText = "{=cmt_mcm_caravans_favour_low_stock_hint}On by default. Caravans rate castles low on goods higher as trade stops, so empty castles fill up. Needs Caravans trade at castles.")]
+        [SettingPropertyBool("{=cmt_mcm_unlimited_castle_origin_caravans_name}Unlimited caravans from each castle", Order = 5, RequireRestart = false, HintText = "{=cmt_mcm_unlimited_castle_origin_caravans_hint}Off by default. On: each castle merchant can form a caravan like a town (1.4.0 behaviour). Off: use the limit below. Loop and food fixes still apply either way.")]
+        [SettingPropertyGroup(GroupCastleMarket)]
+        public bool UnlimitedCastleOriginCaravans
+        {
+            get { return _unlimitedCastleOriginCaravans; }
+            set
+            {
+                if (_unlimitedCastleOriginCaravans == value)
+                {
+                    return;
+                }
+
+                _unlimitedCastleOriginCaravans = value;
+                _uiVersion++;
+                OnPropertyChanged("UnlimitedCastleOriginCaravans");
+                OnPropertyChanged("UIVersion");
+            }
+        }
+
+        [SettingPropertyInteger("{=cmt_mcm_max_castle_origin_caravans_name}Max caravans from each castle", 1, 20, "0", Order = 6, RequireRestart = false, HintText = "{=cmt_mcm_max_castle_origin_caravans_hint}How many active caravans may start from each covered castle. Default 2. Visiting foreign caravans do not count. Merchants stay; only new formation is blocked at the cap. Hidden while Unlimited is on.")]
+        [SettingPropertyGroup(GroupCastleMarket)]
+        public int MaxCastleOriginCaravans { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_caravans_favour_low_stock_name}Caravans favour low-stock castles", Order = 7, RequireRestart = false, HintText = "{=cmt_mcm_caravans_favour_low_stock_hint}On by default. Boosts castles that are short of goods the caravan can actually sell or that need food the caravan carries. Needs Caravans trade at castles.")]
         [SettingPropertyGroup(GroupCastleMarket)]
         public bool CaravansFavourLowStock { get; set; }
 
-        [SettingPropertyInteger("{=cmt_mcm_caravan_bonus_percent_name}Caravan boost percent", 0, 100, "0", Order = 6, RequireRestart = false, HintText = "{=cmt_mcm_caravan_bonus_percent_hint}Largest boost to a caravan's rating of a nearly empty castle. Default 25. It shrinks to 0 as the castle reaches 35 percent of its town's trade goods.")]
+        [SettingPropertyInteger("{=cmt_mcm_caravan_bonus_percent_name}Caravan boost percent", 0, 100, "0", Order = 8, RequireRestart = false, HintText = "{=cmt_mcm_caravan_bonus_percent_hint}Largest boost for a real shortage matching the caravan's cargo. Default 25. Loops and crowded castles are also penalised.")]
         [SettingPropertyGroup(GroupCastleMarket)]
         public int CaravanBonusPercent { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_siege_food_from_market_name}Siege food from the castle market", Order = 7, RequireRestart = false, HintText = "{=cmt_mcm_siege_food_from_market_hint}On by default. A besieged castle that runs out of food uses its market's food, as a town does.")]
+        [SettingPropertyInteger("{=cmt_mcm_castle_caravan_party_size_percent_name}Castle caravan party size", 80, 100, "0", Order = 9, RequireRestart = false, HintText = "{=cmt_mcm_castle_caravan_party_size_percent_hint}Size of caravans that started at a covered castle, as a percent of Caravan Party Limit Increased Fixed. Default 80. Shown only when that mod is enabled.")]
+        [SettingPropertyGroup(GroupCastleMarket + "/{=cmt_mcm_group_cpi_support}" + CpiSupportGroupLeaf)]
+        public int CastleCaravanPartySizePercent { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_siege_food_from_market_name}Siege food from the castle market", Order = 10, RequireRestart = false, HintText = "{=cmt_mcm_siege_food_from_market_hint}On by default. A besieged castle that runs out of food uses its market's food, as a town does.")]
         [SettingPropertyGroup(GroupCastleMarket)]
         public bool SiegeFoodFromMarket { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_lords_buy_castle_food_name}Lords buy food at castles", Order = 8, RequireRestart = false, HintText = "{=cmt_mcm_lords_buy_castle_food_hint}On by default. Lords can buy castle food above the castle's siege reserve, and travel to castles with food to spare. Off: they buy food only in towns and villages.")]
+        [SettingPropertyBool("{=cmt_mcm_lords_buy_castle_food_name}Lords buy food at castles", Order = 11, RequireRestart = false, HintText = "{=cmt_mcm_lords_buy_castle_food_hint}On by default. Lords can buy castle food above the castle's siege reserve, and travel to castles with food to spare. Off: they buy food only in towns and villages.")]
         [SettingPropertyGroup(GroupCastleMarket)]
         public bool LordsBuyCastleFood { get; set; }
 

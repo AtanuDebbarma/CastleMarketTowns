@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.1
+
+- **Caravan trains at covered castles.** Covered castles default to **two** active caravans that started there (MCM: Max caravans from each castle, 1–20), with an **Unlimited** toggle for 1.4.0 / town-like per-merchant formation. Visiting foreign caravans do not count toward the origin cap. Merchants stay; only new formation is blocked at the cap. Existing excess caravans are not deleted. Anti-loop / congestion / hard-crowd checks apply to **covered castle** destinations (five-day return penalty, unbounded congestion decay, hard reject at 12 already targeting/present). Pure town↔town routes (for example Diathma↔Saneopa) stay vanilla and are out of scope.
+- **Smarter castle trade scores.** Penalises immediate return trips and crowded castle destinations, dampens destinations that cannot afford goods the caravan can profitably sell there, and replaces the old blanket low-stock boost with cargo-relevant shortage (food bonus only when the castle needs food and the caravan carries food).
+- **Castle Food Stocks from the market.** Outside sieges, leftover market food is converted into daily Food Stocks after ordinary consumption via `SoldItems` only (no direct `FoodStocks +=`, so units are not double-credited). Categories match the food taken. Siege market food keeps its own setting.
+- **War Sails.** Landlocked **covered castles** use land trade-score assumptions and correct `isTargetingPort`; coastal price selection while scoring uses the candidate town. Vanilla towns keep vanilla naval targeting/scoring.
+- **Origin tracking.** Campaign-safe reset/migration; repairs partial origin data; spawn/cap use `HomeSettlement ?? BornSettlement`; size scaling requires a saved castle origin.
+- **Caravan Party Limit Increased Fixed (Mod Support).** Optional. When that mod is enabled, MCM shows **Castle caravan party size** (80–100%, default 80%) for caravans that started at a covered castle.
+- **MCM / Harmony.** Visibility filter catches its own errors and does not suppress other mods' MCM discovery exceptions. Key caravan redirects log when expected getter replacements are missing.
+- Soft save migration for caravan origin records. Towns and uncovered castles stay vanilla.
+
 ## 1.4.0
 
 - **AutoTrader** support (optional; tested with 1.4.6). With **AutoTrader support** on in MCM (the default) and AutoTrader installed, covered castle menus gain **Automatically trade wares** (`ATTrade`) next to **Trade**, calling AutoTrader's own action so its **Alt+A** settings still apply. AutoTrader treats covered castles as towns for merchant gold and the trade screen (avoiding its village-gold crash path); reference prices stay towns and villages only. Town, village, caravan and War Sails port paths are unchanged. No AutoTrader files are changed or required. Support is fail-closed: exact method signatures and a single `IsTown` redirect are required before Ready; a missing campaign behavior or runtime failure disables it for the session with one log (and a short message if the option was used), and the redirect then returns vanilla `IsTown`. If AutoTrader is missing or an update changes the expected API, that support stays inactive and the game log names it. Translation IDs: `cmt_mcm_autotrader_support_name`, `cmt_mcm_autotrader_support_hint`, `cmt_error_autotrader`.

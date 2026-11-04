@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -408,21 +409,136 @@ namespace CastleMarketTowns
     [HarmonyPatch(typeof(CaravansCampaignBehavior), "GetTradeScoreForTown")]
     internal static class CastleCaravanLowStockPatch
     {
-        private const float LowStockRatio = 0.35f;
-
-        static void Postfix(Town town, ref float __result)
+        static void Postfix(MobileParty caravanParty, Town town, ref float __result)
         {
-            CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
-            Settlement settlement = town == null ? null : town.Settlement;
-            if (__result <= 0f || settings == null || !settings.CaravansFavourLowStock || settlement == null || !settlement.IsCastle || !CastleMarketTownsBehavior.AppliesTo(settlement))
+            CastleCaravanRouting.AdjustScore(caravanParty, town, ref __result);
+        }
+    }
+
+    [HarmonyPatch(typeof(DefaultCaravanModel), "CanHeroCreateCaravan")]
+    internal static class CastleCaravanOriginCapEligibilityPatch
+    {
+        static void Postfix(Hero hero, ref bool __result)
+        {
+            if (!__result || hero == null)
             {
                 return;
             }
 
-            float ratio = CastleMarketTownsBehavior.StockRatio(settlement);
-            if (ratio < LowStockRatio)
+            if (CastleCaravanOrigins.HeroBlockedByOriginCap(hero))
             {
-                __result *= 1f + settings.CaravanBonusPercent / 100f * (1f - ratio / LowStockRatio);
+                __result = false;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(CaravansCampaignBehavior), "SpawnCaravan")]
+    internal static class CastleCaravanOriginCapSpawnPatch
+    {
+        static bool Prefix(Hero hero, out HashSet<string> __state)
+        {
+            __state = SnapshotOwnedCaravanIds(hero);
+            if (hero != null && CastleCaravanOrigins.HeroBlockedByOriginCap(hero))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        static void Postfix(Hero hero, HashSet<string> __state)
+        {
+            if (hero == null)
+            {
+                return;
+            }
+
+            Settlement home = CastleCaravanOrigins.ResolveSpawnSettlement(hero, null);
+            if (home == null || !home.IsCastle || !CastleMarketTownsBehavior.AppliesTo(home))
+            {
+                return;
+            }
+
+            foreach (MobileParty party in MobileParty.AllCaravanParties)
+            {
+                if (party == null || !party.IsCaravan || party.Owner != hero || string.IsNullOrEmpty(party.StringId))
+                {
+                    continue;
+                }
+
+                // Only the caravan(s) created by this spawn — do not re-tag older ones.
+                if (__state != null && __state.Contains(party.StringId))
+                {
+                    continue;
+                }
+
+                CastleCaravanOrigins.RecordOrigin(party, home);
+            }
+        }
+
+        private static HashSet<string> SnapshotOwnedCaravanIds(Hero hero)
+        {
+            HashSet<string> ids = new HashSet<string>();
+            if (hero == null)
+            {
+                return ids;
+            }
+
+            foreach (MobileParty party in MobileParty.AllCaravanParties)
+            {
+                if (party != null && party.IsCaravan && party.Owner == hero && !string.IsNullOrEmpty(party.StringId))
+                {
+                    ids.Add(party.StringId);
+                }
+            }
+
+            return ids;
+        }
+    }
+
+    [HarmonyPatch(typeof(CaravansCampaignBehavior), "OnMobilePartyDestroyed")]
+    internal static class CastleCaravanDestroyedPatch
+    {
+        static void Prefix(MobileParty mobileParty)
+        {
+            if (mobileParty != null && mobileParty.IsCaravan)
+            {
+                CastleCaravanOrigins.Forget(mobileParty);
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(CaravansCampaignBehavior), "ShouldPartyUseCoastalPrices")]
+    internal static class CastleCaravanCoastalPricePatch
+    {
+        static void Postfix(MobileParty mobileParty, ref bool __result)
+        {
+            if (mobileParty == null || !__result)
+            {
+                return;
+            }
+
+            // Prefer the town currently being scored (GetTradeScoreForTown), not the old TargetSettlement.
+            Settlement target = null;
+            Town scoring = CastleCaravanRoutePatch.ScoringTown;
+            if (scoring != null)
+            {
+                target = scoring.Settlement;
+            }
+
+            if (target == null)
+            {
+                target = mobileParty.TargetSettlement;
+            }
+
+            if (target == null)
+            {
+                target = mobileParty.ShortTermTargetSettlement;
+            }
+
+            if (target != null && target.IsCastle && !target.HasPort && CastleCaravanStops.IsStop(target))
+            {
+                __result = false;
             }
         }
     }
@@ -1191,15 +1307,78 @@ namespace CastleMarketTowns
                 && settlement.Town.MarketData != null;
         }
 
+        // Keep vanilla HasPort meaning. Castle stops are included via Stops()/IsStop, not by faking a port.
         public static bool HasPortOrStop(Settlement settlement)
         {
-            return settlement != null && (settlement.HasPort || (settlement.IsCastle && IsStop(settlement)));
+            return settlement != null && settlement.HasPort;
         }
 
+        // Vanilla uses isTargetingPort = HasNaval for every destination. Only override for
+        // landlocked covered castles; towns and other settlements keep vanilla behaviour.
         public static bool TargetsPort(bool hasNavalNavigationCapability, Town town)
         {
+            if (!hasNavalNavigationCapability)
+            {
+                return false;
+            }
+
             Settlement settlement = town == null ? null : town.Settlement;
-            return hasNavalNavigationCapability && settlement != null && settlement.HasPort;
+            if (settlement != null && settlement.IsCastle && !settlement.HasPort && IsStop(settlement))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        // Naval caravans keep naval score assumptions for towns/ports, but not for landlocked covered castles.
+        public static bool UseNavalTradeScoreAssumptions(bool hasNavalNavigationCapability, Town town)
+        {
+            return TargetsPort(hasNavalNavigationCapability, town);
+        }
+
+        public static IEnumerable<CodeInstruction> RedirectExact(
+            IEnumerable<CodeInstruction> instructions,
+            string getter,
+            string replacement,
+            int expectedReplacements,
+            string patchName)
+        {
+            MethodInfo target = AccessTools.Method(typeof(CastleCaravanStops), replacement);
+            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+            if (target == null)
+            {
+                Debug.Print("Castle Market Towns: " + patchName + " helper missing; leaving IL unchanged.");
+                return codes;
+            }
+
+            int replaced = 0;
+            for (int i = 0; i < codes.Count; i++)
+            {
+                MethodInfo called = codes[i].operand as MethodInfo;
+                if (called != null && called.Name == getter
+                    && (called.DeclaringType == typeof(Town) || called.DeclaringType == typeof(Settlement)))
+                {
+                    codes[i].opcode = OpCodes.Call;
+                    codes[i].operand = target;
+                    replaced++;
+                }
+            }
+
+            if (replaced == 0)
+            {
+                Debug.Print("Castle Market Towns: " + patchName + " found no " + getter
+                    + " calls to replace with " + replacement + "; leaving IL unchanged.");
+                return new List<CodeInstruction>(instructions);
+            }
+
+            if (expectedReplacements > 0 && replaced != expectedReplacements)
+            {
+                Debug.Print("Castle Market Towns: " + patchName + " expected " + expectedReplacements
+                    + " replacement(s) of " + getter + " but found " + replaced + " (kept).");
+            }
+
+            return codes;
         }
 
         public static MBReadOnlyList<Town> Stops()
@@ -1254,10 +1433,10 @@ namespace CastleMarketTowns
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            return CastleCaravanStops.Redirect(
-                CastleCaravanStops.Redirect(instructions, "get_AllTowns", "Stops"),
-                "get_HasPort",
-                "HasPortOrStop");
+            IEnumerable<CodeInstruction> withStops = CastleCaravanStops.RedirectExact(
+                instructions, "get_AllTowns", "Stops", 1, "FindNextDestinationForCaravan/AllTowns");
+            return CastleCaravanStops.RedirectExact(
+                withStops, "get_HasPort", "HasPortOrStop", 0, "FindNextDestinationForCaravan/HasPort");
         }
 
         static void Postfix(MobileParty caravanParty, ref Town __result, ref MobileParty.NavigationType bestNavigationType, ref bool isFromPort, ref bool isTargetingPort)
@@ -1289,23 +1468,137 @@ namespace CastleMarketTowns
     [HarmonyPatch(typeof(CaravansCampaignBehavior), "GetTradeScoreForTown")]
     internal static class CastleCaravanRoutePatch
     {
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        [ThreadStatic]
+        private static Town _scoringTown;
+
+        internal static Town ScoringTown
+        {
+            get { return _scoringTown; }
+        }
+
+        static void Prefix(Town town)
+        {
+            _scoringTown = town;
+        }
+
+        static void Finalizer()
+        {
+            _scoringTown = null;
+        }
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase original)
         {
             List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
             MethodInfo route = AccessTools.Method(typeof(AiHelper), "GetBestNavigationTypeAndAdjustedDistanceOfSettlementForMobileParty");
             MethodInfo targetsPort = AccessTools.Method(typeof(CastleCaravanStops), "TargetsPort");
+            MethodInfo useNavalScore = AccessTools.Method(typeof(CastleCaravanStops), "UseNavalTradeScoreAssumptions");
+            MethodInfo hasNaval = AccessTools.PropertyGetter(typeof(MobileParty), "HasNavalNavigationCapability");
+            if (route == null || targetsPort == null || useNavalScore == null || hasNaval == null)
+            {
+                Debug.Print("Castle Market Towns: GetTradeScoreForTown helpers missing; leaving IL unchanged.");
+                return codes;
+            }
+
             int routeCall = codes.FindIndex(delegate(CodeInstruction code) { return code.Calls(route); });
+            if (routeCall < 0)
+            {
+                Debug.Print("Castle Market Towns: GetTradeScoreForTown route call missing; leaving IL unchanged.");
+                return codes;
+            }
+
+            int flagLocal = FindFirstBoolLocal(original);
+            int stindFixed = 0;
+
+            // Replace the bool about to be stored into isTargetingPort with
+            // TargetsPort(caravanParty.HasNavalNavigationCapability, town).
             for (int i = 0; i < routeCall; i++)
             {
-                if (codes[i].opcode == OpCodes.Stind_I1)
+                if (codes[i].opcode != OpCodes.Stind_I1)
                 {
-                    codes.Insert(i, new CodeInstruction(OpCodes.Ldarg_2));
-                    codes.Insert(i + 1, new CodeInstruction(OpCodes.Call, targetsPort));
-                    break;
+                    continue;
                 }
+
+                // stack before Stind_I1: [addr, value] — drop value, push correct TargetsPort result
+                codes.Insert(i, new CodeInstruction(OpCodes.Pop));
+                codes.Insert(i + 1, new CodeInstruction(OpCodes.Ldarg_1));
+                codes.Insert(i + 2, new CodeInstruction(OpCodes.Callvirt, hasNaval));
+                codes.Insert(i + 3, new CodeInstruction(OpCodes.Ldarg_2));
+                codes.Insert(i + 4, new CodeInstruction(OpCodes.Call, targetsPort));
+                stindFixed = 1;
+                routeCall += 5;
+                break;
+            }
+
+            if (stindFixed != 1)
+            {
+                Debug.Print("Castle Market Towns: GetTradeScoreForTown isTargetingPort store missing; leaving IL unchanged.");
+                return new List<CodeInstruction>(instructions);
+            }
+
+            // Overwrite local flag after AiHelper so naval speed/thresholds are land for landlocked castles.
+            // Vanilla: flag stays HasNaval even when isTargetingPort was corrected.
+            if (flagLocal >= 0)
+            {
+                int insertAt = routeCall + 1;
+                codes.Insert(insertAt++, new CodeInstruction(OpCodes.Ldarg_1));
+                codes.Insert(insertAt++, new CodeInstruction(OpCodes.Callvirt, hasNaval));
+                codes.Insert(insertAt++, new CodeInstruction(OpCodes.Ldarg_2));
+                codes.Insert(insertAt++, new CodeInstruction(OpCodes.Call, useNavalScore));
+                codes.Insert(insertAt, StoreLocal(flagLocal));
+            }
+            else
+            {
+                Debug.Print("Castle Market Towns: GetTradeScoreForTown flag local not found; port targeting still corrected.");
             }
 
             return codes;
+        }
+
+        private static int FindFirstBoolLocal(MethodBase original)
+        {
+            if (original == null)
+            {
+                return -1;
+            }
+
+            MethodBody body = original.GetMethodBody();
+            if (body == null)
+            {
+                return -1;
+            }
+
+            IList<LocalVariableInfo> locals = body.LocalVariables;
+            for (int i = 0; i < locals.Count; i++)
+            {
+                if (locals[i].LocalType == typeof(bool))
+                {
+                    return locals[i].LocalIndex;
+                }
+            }
+
+            return -1;
+        }
+
+        private static CodeInstruction StoreLocal(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return new CodeInstruction(OpCodes.Stloc_0);
+                case 1:
+                    return new CodeInstruction(OpCodes.Stloc_1);
+                case 2:
+                    return new CodeInstruction(OpCodes.Stloc_2);
+                case 3:
+                    return new CodeInstruction(OpCodes.Stloc_3);
+                default:
+                    if (index <= byte.MaxValue)
+                    {
+                        return new CodeInstruction(OpCodes.Stloc_S, (byte)index);
+                    }
+
+                    return new CodeInstruction(OpCodes.Stloc, index);
+            }
         }
     }
 
@@ -1314,7 +1607,7 @@ namespace CastleMarketTowns
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            return CastleCaravanStops.Redirect(instructions, "get_IsTown", "IsStop");
+            return CastleCaravanStops.RedirectExact(instructions, "get_IsTown", "IsStop", 0, "HourlyTickParty");
         }
     }
 
@@ -1323,7 +1616,7 @@ namespace CastleMarketTowns
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            return CastleCaravanStops.Redirect(instructions, "get_IsTown", "IsStop");
+            return CastleCaravanStops.RedirectExact(instructions, "get_IsTown", "IsStop", 0, "SpawnCaravan");
         }
     }
 
@@ -1332,7 +1625,16 @@ namespace CastleMarketTowns
     {
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            return CastleCaravanStops.Redirect(instructions, "get_IsTown", "IsStop");
+            return CastleCaravanStops.RedirectExact(instructions, "get_IsTown", "IsStop", 0, "OnSettlementLeft");
+        }
+
+        static void Postfix(MobileParty mobileParty, Settlement settlement)
+        {
+            if (mobileParty != null && mobileParty.IsCaravan && settlement != null && settlement.IsCastle
+                && CastleMarketTownsBehavior.AppliesTo(settlement))
+            {
+                CastleCaravanOrigins.RememberStop(mobileParty, settlement);
+            }
         }
     }
 

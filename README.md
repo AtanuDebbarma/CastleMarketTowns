@@ -25,7 +25,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Merchants and artisans | Yes | None | 2 merchants and 2 artisans |
 | Workshops | 4 slots | None | 2 slots. Bought from castle notables and managed from the clan screen like a town workshop, with its own warehouse |
 | Workshops you can own | Clan tier + 1, across all towns | None, castles have no workshops | Clan tier + 1 across all castles, a limit separate from towns that mods changing the town limit do not affect. Town and castle limits each have their own optional extra, and the castle limit can be set to a fixed number or removed |
-| Caravans | Formed by town merchants | None | Formed by castle merchants. Caravans also trade at castles |
+| Caravans | Formed by town merchants | None | Formed by castle merchants (default two active caravans per covered castle; optional unlimited). Caravans also trade at castles, with anti-loop / congestion scoring. Optional size percent when CaravanPartyLimitIncreasedFixed is installed |
 | Volunteers from notables | Yes | None | Yes, at 65% of a town's speed, 50% chance of noble troops |
 | Noble recruits from villages | No | Yes | Yes, unchanged |
 | Prosperity | About 1,700 to 5,600 | About 420 to 1,100 | Raised to at least 1,000, grows with trade |
@@ -35,7 +35,7 @@ Castle Market Towns overhauls castles to give them the life they deserve. They g
 | Town healing perks | Yes | No | Yes |
 | Smithy | Yes, with smithing orders | No | Yes, without smithing orders |
 | Siege food from the market | Yes | No | Yes |
-| Merchant, artisan and village quests | Yes | None | A selection that fits a castle: village **Deliver a Herd** and **Family Feud** via castle villages, **Artisan Can't Sell** to a town or covered castle, and the other castle quest toggles. Guard delivery options appear while that quest is active and the market gate is blocked (herd ignores coverage loss until soft-cancel; artisan needs coverage). If the castle loses CMT coverage, those quests and open issues cancel softly with a journal note (no fail penalties; herd animals are kept; failed cancels retry without mixing castles); turning off only a quest MCM toggle does not |
+| Merchant, artisan and village quests | Yes | None | A selection that fits a castle: village **Deliver a Herd** and **Family Feud** via castle villages, **Artisan Can't Sell** to a town or covered castle, and the other castle quest toggles. Guard delivery options appear while that quest is active and the market gate is blocked (herd ignores coverage loss until soft-cancel; artisan needs coverage). If the castle loses CMT coverage, those quests and open issues cancel softly with a journal note (no fail penalties; herd animals are kept; failed cancels retry without mixing castles). Turning off only a quest MCM toggle does not cancel ongoing quests |
 | Training for you and your companions | No | No | Skills and attributes, for gold and influence, with a cooldown |
 | Arena and tournaments | Yes | No | No |
 | Walking the streets in third person | Yes | No | No |

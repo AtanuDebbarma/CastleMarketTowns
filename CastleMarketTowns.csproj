@@ -86,6 +86,10 @@
       <HintPath>$(BannerlordBin)TaleWorlds.SaveSystem.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="TaleWorlds.ModuleManager">
+      <HintPath>$(BannerlordBin)TaleWorlds.ModuleManager.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="SandBox">
       <HintPath>$(BannerlordModules)SandBox\bin\Win64_Shipping_Client\SandBox.dll</HintPath>
       <Private>false</Private>
