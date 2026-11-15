@@ -231,7 +231,7 @@ namespace CastleMarketTowns
             // Half reward first; vanilla DeliverItemsFullyOnConsequence removes goods, updates the journal task, and completes.
             RewardGoldField.SetValue(quest, ReducedReward(quest));
             DeliverFullyMethod.Invoke(quest, null);
-            GameMenu.SwitchToMenu(OutsideMenuId);
+            GameMenu.SwitchToMenu(string.IsNullOrEmpty(_returnMenuId) ? OutsideMenuId : _returnMenuId);
         }
 
         private static bool RejectCondition(MenuCallbackArgs args)

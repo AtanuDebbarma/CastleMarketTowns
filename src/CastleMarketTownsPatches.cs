@@ -19,6 +19,7 @@ using TaleWorlds.Localization;
 
 namespace CastleMarketTowns
 {
+    // Priority.Low so CTE dynasty volunteer (Priority.Last) multiplies and clamps after this castle %.
     [HarmonyPatch(typeof(DefaultVolunteerModel), "GetDailyVolunteerProductionProbability")]
     internal static class CastleRecruitSpeedPatch
     {
@@ -32,6 +33,7 @@ namespace CastleMarketTowns
             return settlement != null && (settlement.IsTown || settlement.IsCastle);
         }
 
+        [HarmonyPriority(Priority.Low)]
         static void Postfix(Hero hero, Settlement settlement, ref float __result)
         {
             CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
@@ -201,6 +203,85 @@ namespace CastleMarketTowns
         public static bool RecruitTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || CastleMarketTownsBehavior.RecruitsAvailable(settlement));
+        }
+    }
+
+    // Prefix/Finalizer must not live on CastleVolunteerPatch: HourlyTickParty has no Settlement arg and
+    // Harmony then fails the whole class (IsTown redirects never apply).
+    // Runs on every settlement UpdateVolunteers tick. Valid troops unchanged (solo CMT no-op).
+    // Needed for leftover troop-mod CharacterObjects in notable slots (towns and castles).
+    [HarmonyPatch(typeof(RecruitmentCampaignBehavior), "UpdateVolunteersOfNotablesInSettlement")]
+    internal static class CastleVolunteerSanitizePatch
+    {
+        static void Prefix(Settlement settlement)
+        {
+            if (settlement == null || settlement.Notables == null)
+            {
+                return;
+            }
+
+            foreach (Hero hero in settlement.Notables)
+            {
+                if (hero == null)
+                {
+                    continue;
+                }
+
+                CharacterObject[] slots = hero.VolunteerTypes;
+                if (slots == null)
+                {
+                    continue;
+                }
+
+                for (int i = 0; i < slots.Length; i++)
+                {
+                    if (!IsUsableVolunteerSlot(slots[i]))
+                    {
+                        slots[i] = null;
+                    }
+                }
+            }
+        }
+
+        static Exception Finalizer(Exception __exception, Settlement settlement)
+        {
+            if (!(__exception is NullReferenceException))
+            {
+                return __exception;
+            }
+
+            string id = settlement != null ? settlement.StringId : "?";
+            Debug.Print("Castle Market Towns: volunteer update NullReferenceException at " + id + "; skipped for this tick.");
+            return null;
+        }
+
+        // Leftover ftr_* / removed-pack troops can still look non-null; touch the fields vanilla uses.
+        private static bool IsUsableVolunteerSlot(CharacterObject troop)
+        {
+            if (troop == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                if (!troop.IsReady || troop.Culture == null)
+                {
+                    return false;
+                }
+
+                // Force property access that vanilla UpdateVolunteers reaches before NRE on broken objs.
+                if (troop.Tier < 0 && troop.IsHero)
+                {
+                    return false;
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 
@@ -593,6 +674,12 @@ namespace CastleMarketTowns
                 return true;
             }
 
+            // HAP owns castle rebellions when that module is loaded; do not expand IsTown to castles.
+            if (CastleHapCompat.OwnsCastleRebellions)
+            {
+                return false;
+            }
+
             CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
             if (!CastleMarketTownsBehavior.AppliesTo(settlement))
             {
@@ -618,7 +705,8 @@ namespace CastleMarketTowns
         ArmyOfPoachers,
         InnAndOut,
         DeliverHerd,
-        FamilyFeud
+        FamilyFeud,
+        NeedsGrain
     }
 
     internal static class CastleQuestRules
@@ -647,6 +735,7 @@ namespace CastleMarketTowns
                 case CastleQuest.InnAndOut: return settings.QuestInnAndOut;
                 case CastleQuest.DeliverHerd: return settings.QuestDeliverHerd;
                 case CastleQuest.FamilyFeud: return settings.QuestFamilyFeud;
+                case CastleQuest.NeedsGrain: return settings.QuestNeedsGrain;
             }
 
             return true;
@@ -698,6 +787,23 @@ namespace CastleMarketTowns
             return settlement != null && (settlement.IsTown || (CastleMarketTownsBehavior.AppliesTo(settlement) && Enabled(CastleQuest.FamilyFeud)));
         }
 
+        // Vanilla Needs Grain requires Village.Bound.IsTown. Covered castles also expose Town/MarketData, so treat them
+        // as valid bounds when the MCM toggle is on. The suggested grain source remains a non-castle town (vanilla search).
+        public static bool NeedsGrainBoundTown(Settlement bound)
+        {
+            if (bound == null)
+            {
+                return false;
+            }
+
+            if (bound.IsTown)
+            {
+                return true;
+            }
+
+            return bound.IsCastle && CastleMarketTownsBehavior.AppliesTo(bound) && Enabled(CastleQuest.NeedsGrain);
+        }
+
         public static IEnumerable<CodeInstruction> Redirect(IEnumerable<CodeInstruction> instructions, string getter, string helper)
         {
             MethodInfo target = AccessTools.Method(typeof(CastleQuestRules), helper);
@@ -712,6 +818,53 @@ namespace CastleMarketTowns
 
                 yield return instruction;
             }
+        }
+
+        // Fail closed: only rewrite when the getter count matches exactly. A future game update that adds another
+        // Settlement.IsTown call must not silently redirect both.
+        public static IEnumerable<CodeInstruction> RedirectExact(
+            IEnumerable<CodeInstruction> instructions,
+            string getter,
+            string helper,
+            int expectedReplacements,
+            string patchName)
+        {
+            MethodInfo target = AccessTools.Method(typeof(CastleQuestRules), helper);
+            List<CodeInstruction> codes = new List<CodeInstruction>(instructions);
+            if (target == null)
+            {
+                Debug.Print("Castle Market Towns: " + patchName + " helper missing; leaving IL unchanged.");
+                return codes;
+            }
+
+            int matches = 0;
+            for (int i = 0; i < codes.Count; i++)
+            {
+                MethodInfo called = codes[i].operand as MethodInfo;
+                if (called != null && called.Name == getter && called.DeclaringType == typeof(Settlement))
+                {
+                    matches++;
+                }
+            }
+
+            if (matches != expectedReplacements)
+            {
+                Debug.Print("Castle Market Towns: " + patchName + " expected exactly " + expectedReplacements
+                    + " Settlement." + getter + " call(s) but found " + matches + "; leaving IL unchanged.");
+                return codes;
+            }
+
+            for (int i = 0; i < codes.Count; i++)
+            {
+                MethodInfo called = codes[i].operand as MethodInfo;
+                if (called != null && called.Name == getter && called.DeclaringType == typeof(Settlement))
+                {
+                    codes[i].opcode = OpCodes.Call;
+                    codes[i].operand = target;
+                }
+            }
+
+            return codes;
         }
 
         public static bool ScopeTown(Settlement settlement)
@@ -791,6 +944,15 @@ namespace CastleMarketTowns
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
             return CastleQuestRules.Redirect(instructions, "get_IsTown", "FeudTown");
+        }
+    }
+
+    [HarmonyPatch(typeof(HeadmanNeedsGrainIssueBehavior), "ConditionsHold")]
+    internal static class CastleNeedsGrainQuestPatch
+    {
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return CastleQuestRules.RedirectExact(instructions, "get_IsTown", "NeedsGrainBoundTown", 1, "CastleNeedsGrainQuestPatch");
         }
     }
 

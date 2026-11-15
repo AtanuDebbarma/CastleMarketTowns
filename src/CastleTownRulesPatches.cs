@@ -71,6 +71,12 @@ namespace CastleMarketTowns
             return settlement != null && (settlement.IsTown || (settlement.IsCastle && settlement.Town != null));
         }
 
+        // CompanionsCraft only: covered castles use town market prices / Town.Gold; uncovered castles stay vanilla IsTown.
+        public static bool CompanionsCraftTradesAsTown(Settlement settlement)
+        {
+            return settlement != null && (settlement.IsTown || Covered(settlement));
+        }
+
         public static bool NamesAsTown(Settlement settlement)
         {
             return settlement != null && (settlement.IsTown || (settlement.IsCastle && settlement.Town != null));

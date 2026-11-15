@@ -78,7 +78,10 @@ namespace CastleMarketTowns
             }
 
             float boost = settings.CaravanBonusPercent / 100f * shortage;
-            if (CaravanCarriesFood(caravan) && CastleHasFoodDeficit(castle))
+            // When HAP is loaded, it already multiplies food attraction; skip CMT's extra hunger bonus.
+            if (!CastleHapCompat.SuppressFoodCaravanAttraction
+                && CaravanCarriesFood(caravan)
+                && CastleHasFoodDeficit(castle))
             {
                 boost += 0.15f * shortage;
             }

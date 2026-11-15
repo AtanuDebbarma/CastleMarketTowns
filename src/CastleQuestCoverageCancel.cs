@@ -33,6 +33,7 @@ namespace CastleMarketTowns
             AddInner(types, typeof(CaravanAmbushIssueBehavior), "CaravanAmbushIssueQuest");
             AddInner(types, typeof(MerchantArmyOfPoachersIssueBehavior), "MerchantArmyOfPoachersIssueQuest");
             AddInner(types, typeof(HeadmanNeedsToDeliverAHerdIssueBehavior), "HeadmanNeedsToDeliverAHerdIssueQuest");
+            AddInner(types, typeof(HeadmanNeedsGrainIssueBehavior), "HeadmanNeedsGrainIssueQuest");
             AddInner(types, AccessTools.TypeByName("SandBox.Issues.RuralNotableInnAndOutIssueBehavior"), "RuralNotableInnAndOutIssueQuest");
             AddInner(types, AccessTools.TypeByName("SandBox.Issues.FamilyFeudIssueBehavior"), "FamilyFeudIssueQuest");
             return types.ToArray();
@@ -48,6 +49,7 @@ namespace CastleMarketTowns
             AddInner(types, typeof(CaravanAmbushIssueBehavior), "CaravanAmbushIssue");
             AddInner(types, typeof(MerchantArmyOfPoachersIssueBehavior), "MerchantArmyOfPoachersIssue");
             AddInner(types, typeof(HeadmanNeedsToDeliverAHerdIssueBehavior), "HeadmanNeedsToDeliverAHerdIssue");
+            AddInner(types, typeof(HeadmanNeedsGrainIssueBehavior), "HeadmanNeedsGrainIssue");
             AddInner(types, AccessTools.TypeByName("SandBox.Issues.RuralNotableInnAndOutIssueBehavior"), "RuralNotableInnAndOutIssue");
             AddInner(types, AccessTools.TypeByName("SandBox.Issues.FamilyFeudIssueBehavior"), "FamilyFeudIssue");
             return types.ToArray();

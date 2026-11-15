@@ -601,6 +601,15 @@ namespace CastleMarketTowns
 
             foreach (KeyValuePair<ItemObject, float> pair in produced)
             {
+                // Under HAP, keep food on the castle market for HAP granary/supply; non-food surplus still exports.
+                if (CastleHapCompat.SkipFoodSurplusExport
+                    && pair.Key != null
+                    && pair.Key.ItemCategory != null
+                    && pair.Key.ItemCategory.Properties == ItemCategory.Property.BonusToFoodStores)
+                {
+                    continue;
+                }
+
                 int surplus = castle.ItemRoster.GetItemNumber(pair.Key) - KeepLine(castle, pair.Key, pair.Value, settings);
                 int sold = SellToTown(castle, marketTown, pair.Key, surplus);
                 if (sold > 0)
