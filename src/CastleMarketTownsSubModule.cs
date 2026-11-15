@@ -13,6 +13,16 @@ namespace CastleMarketTowns
 
         protected override void OnSubModuleLoad()
         {
+            // Before other patches and before HAP's SubModule runs (CMT loads earlier): keep HAPTextObjects alive.
+            try
+            {
+                CastleHapFindTextGuard.TryPatch(_harmony);
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not install Harvest and Production FindText guard: " + exception.Message);
+            }
+
             foreach (System.Type type in AccessTools.GetTypesFromAssembly(typeof(CastleMarketTownsSubModule).Assembly))
             {
                 if (type.GetCustomAttributes(typeof(HarmonyAttribute), false).Length == 0)
@@ -224,10 +234,21 @@ namespace CastleMarketTowns
             {
                 TaleWorlds.Library.Debug.Print("Castle Market Towns could not finish caravan compatibility setup: " + exception.Message);
             }
+
+            try
+            {
+                CastleHapCompat.EnsureValidated();
+            }
+            catch (System.Exception exception)
+            {
+                TaleWorlds.Library.Debug.Print("Castle Market Towns could not validate Harvest and Production support: " + exception.Message);
+            }
         }
 
         protected override void OnGameStart(Game game, IGameStarter gameStarter)
         {
+            CastleHapCompat.ResetForCampaign();
+
             Campaign campaign = game.GameType as Campaign;
             if (campaign == null)
             {

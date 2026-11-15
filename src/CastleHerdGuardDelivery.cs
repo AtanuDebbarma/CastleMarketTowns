@@ -209,7 +209,7 @@ namespace CastleMarketTowns
             int reduced = ReducedReward(quest);
             RewardGoldField.SetValue(quest, reduced);
             quest.CompleteQuestWithSuccess();
-            GameMenu.SwitchToMenu(OutsideMenuId);
+            GameMenu.SwitchToMenu(string.IsNullOrEmpty(_returnMenuId) ? OutsideMenuId : _returnMenuId);
         }
 
         private static bool RejectCondition(MenuCallbackArgs args)

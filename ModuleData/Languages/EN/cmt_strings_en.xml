@@ -16,6 +16,7 @@
     <string id="cmt_mcm_group_castle_recruits" text="Castle recruits" />
     <string id="cmt_mcm_group_castle_quests" text="Castle quests" />
     <string id="cmt_mcm_group_castle_training" text="Castle training" />
+    <string id="cmt_mcm_group_hap" text="Harvest and Production compatibility" />
 
     <!-- Mod Configuration Menu: setting names and hints -->
     <string id="cmt_mcm_enabled_name" text="Enable castle markets" />
@@ -83,7 +84,16 @@
     <string id="cmt_mcm_castle_stock_ceiling_percent_name" text="Castle stock ceiling percent" />
     <string id="cmt_mcm_castle_stock_ceiling_percent_hint" text="Safety cap. Castle production stops once the castle holds this share of its town's stock of a good. Default 60. Goods brought by caravans are not capped." />
     <string id="cmt_mcm_export_castle_surplus_name" text="Sell castle surplus to its town" />
-    <string id="cmt_mcm_export_castle_surplus_hint" text="On by default. Like villagers, the castle sells goods its villages make beyond its reserve to their town and keeps the gold." />
+    <string id="cmt_mcm_export_castle_surplus_hint" text="On by default. Like villagers, the castle sells goods its villages make beyond its reserve to their town and keeps the gold. With Harvest and Production, food surplus stays at the castle for HAP supply; other goods still export." />
+    <string id="cmt_mcm_hap_food_name" text="Use HAP castle-food integration" />
+    <string id="cmt_mcm_hap_food_hint" text="Shown only with Harvest and Production. On by default. Uses HAP's public market-food requisition API so granary Food Stocks stay correct. Off: CMT does not convert castle market food to Food Stocks while HAP is active (the old SoldItems path is never used under HAP)." />
+    <string id="cmt_mcm_hap_raw_mode_name" text="Raw materials for emergency food" />
+    <string id="cmt_mcm_hap_raw_mode_hint" text="Shown only with Harvest and Production. 0 Skip, 1 Last (default, recommended), 2 Include. Maps to HAP RawMaterialMode: workshop inputs stay until other food is used when Last." />
+    <string id="cmt_mcm_hap_rebellion_status_name" text="HAP controls castle rebellions" />
+    <string id="cmt_mcm_hap_rebellion_status_hint" text="Shown only with Harvest and Production. Informational: CMT's castle-rebellion extension is suppressed so HAP alone runs castle rebellion checks. Town rebellions are unchanged. CMT cannot disable HAP's own patches." />
+    <string id="cmt_mcm_hap_reduce_food_caravan_name" text="Reduce duplicate food caravan attraction" />
+    <string id="cmt_mcm_hap_reduce_food_caravan_hint" text="Shown only with Harvest and Production. On by default. Keeps CMT castle routing, congestion and hard caps, but suppresses CMT's extra hunger/food destination bonus so HAP owns that signal." />
+    <string id="cmt_error_hap" text="Harvest and Production is active, but Castle Market Towns could not use its food API. Castle market food will not be converted to Food Stocks." />
     <string id="cmt_mcm_castle_stock_days_name" text="Castle reserve days" />
     <string id="cmt_mcm_castle_stock_days_hint" text="How many days of its own production or consumption, whichever is larger, the castle keeps of each good it produces before selling the rest to its town. Default 10." />
     <string id="cmt_mcm_unlimited_castle_origin_caravans_name" text="Unlimited caravans from each castle" />
@@ -121,7 +131,7 @@
     <string id="cmt_mcm_marketplace_cost_percent_name" text="Castle Marketplace cost percent" />
     <string id="cmt_mcm_marketplace_cost_percent_hint" text="Construction cost of the castle Marketplace, compared with a town Marketplace. Default 60. Only changes construction that has not been done yet." />
     <string id="cmt_mcm_quest_escort_caravan_name" text="Escort Merchant Caravan" />
-    <string id="cmt_mcm_quest_escort_caravan_hint" text="Merchant quest. On by default. Needs low security at the castle, as in a town. Quests already running are not affected." />
+    <string id="cmt_mcm_quest_escort_caravan_hint" text="Merchant quest. On by default. Needs low security at the castle, as in a town. Covered castles can offer it even when War Sails gives the castle a port; real port towns stay banned by the base game. Quests already running are not affected." />
     <string id="cmt_mcm_quest_brigands_name" text="Needs Help With Brigands" />
     <string id="cmt_mcm_quest_brigands_hint" text="Merchant quest. On by default. Needs a bandit hideout near the castle, as in a town. Quests already running are not affected." />
     <string id="cmt_mcm_quest_overpriced_materials_name" text="Overpriced Raw Materials" />
@@ -129,7 +139,7 @@
     <string id="cmt_mcm_quest_artisan_cant_sell_name" text="Artisan Can't Sell Products" />
     <string id="cmt_mcm_quest_artisan_cant_sell_hint" text="Artisan quest from the base game. On by default. Needs a merchant in the same castle and a nearby town or covered castle to deliver to. If the destination is a covered castle whose market gate is blocked while the quest is active (refused entry, disguise, or face charges), you can pay the guards to take the goods in for half the reward. Quests already running are not affected." />
     <string id="cmt_mcm_quest_caravan_ambush_name" text="Caravan Ambush" />
-    <string id="cmt_mcm_quest_caravan_ambush_hint" text="Merchant or artisan quest from the base game. On by default. The notable must own at least one caravan, as in a town. Castles have no port, so it is always the land version. Quests already running are not affected." />
+    <string id="cmt_mcm_quest_caravan_ambush_hint" text="Merchant or artisan quest from the base game. On by default. The notable must own at least one caravan, as in a town. Covered castles use the land version even when War Sails gives the castle a port. Quests already running are not affected." />
     <string id="cmt_mcm_quest_army_of_poachers_name" text="Army of Poachers" />
     <string id="cmt_mcm_quest_army_of_poachers_hint" text="Merchant quest from the base game. On by default. Needs a castle village, low castle security, a nearby hideout and a merchant with low mercy or honor, as in a town. Quests already running are not affected." />
     <string id="cmt_mcm_quest_inn_and_out_name" text="Inn and Out (village)" />
@@ -138,6 +148,8 @@
     <string id="cmt_mcm_quest_deliver_herd_hint" text="Village quest from the base game. On by default. A headman of a horse, cattle or sheep village owned by a castle can offer it, and castle merchants and artisans can be the buyer you deliver the herd to. If that castle's market gate is blocked while the quest is active (refused entry, disguise, or face charges), you can pay the guards to take the herd in for half the reward. Quests already running are not affected." />
     <string id="cmt_mcm_quest_family_feud_name" text="Family Feud (village)" />
     <string id="cmt_mcm_quest_family_feud_hint" text="Village quest from the base game. On by default. A landowner of a village owned by a castle can ask for help with a feud against another village of the same castle. Quests already running are not affected." />
+    <string id="cmt_mcm_quest_needs_grain_name" text="Needs Grain Seeds (village)" />
+    <string id="cmt_mcm_quest_needs_grain_hint" text="Village quest from the base game. On by default. A headman of a non-wheat village owned by a covered castle can offer it when the castle market is short of grain, as town-bound villages already can. The suggested grain source remains a town; delivery is to the village. Quests already running are not affected." />
 
     <!-- Mod Configuration Menu: Castle training -->
     <string id="cmt_mcm_castle_training_name" text="Castle training" />

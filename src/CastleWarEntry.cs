@@ -6,6 +6,7 @@ using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.CampaignBehaviors;
 using TaleWorlds.CampaignSystem.ComponentInterfaces;
+using TaleWorlds.CampaignSystem.Encounters;
 using TaleWorlds.CampaignSystem.GameComponents;
 using TaleWorlds.CampaignSystem.GameMenus;
 using TaleWorlds.CampaignSystem.Settlements;
@@ -14,6 +15,8 @@ namespace CastleMarketTowns
 {
     // Covered castles mirror town settlement-entry rules for war and crime, keep castle NoAccess for bad lord relation,
     // and use castle wording for sneak on castle_outside. Peacetime relation refuse stays on menu_castle_entry_denied.
+    // Bannerlord 1.5.7 / War Sails: sea approach uses naval_castle_outside first; war/crime denials stay there unless
+    // redirected below. Active naval blockades remain on the vanilla naval menus.
     internal static class CastleWarEntry
     {
         private const string OutsideMenuId = "castle_outside";
@@ -32,6 +35,40 @@ namespace CastleMarketTowns
 
             // After Approach the gates, before Besiege — same order as town_outside.
             starter.AddGameMenuOption(OutsideMenuId, "castle_market_towns_disguise", "{=cmt_castle_disguise}Disguise yourself and sneak through the castle gate. ({SNEAK_CHANCE}%)", DisguiseCondition, DisguiseConsequence, false, 1, false, null);
+        }
+
+        // naval_castle_outside / naval_town_outside share naval_town_outside_on_init. Friendly covered castles already
+        // SwitchToMenu(castle_outside). War and crime denials stay on the naval menu — send covered castles to
+        // castle_outside so disguise and guard delivery keep working. Siege / blockade stay vanilla naval.
+        [HarmonyPatch(typeof(EncounterGameMenuBehavior), "naval_town_outside_on_init")]
+        private static class CastleNavalOutsideRedirectPatch
+        {
+            static void Postfix()
+            {
+                Settlement settlement = PlayerEncounter.EncounterSettlement;
+                if (settlement == null)
+                {
+                    settlement = Settlement.CurrentSettlement;
+                }
+
+                if (!CastleTownRules.Covered(settlement) || !settlement.IsCastle || settlement.IsUnderSiege)
+                {
+                    return;
+                }
+
+                string menuId = null;
+                if (Campaign.Current != null && Campaign.Current.CurrentMenuContext != null && Campaign.Current.CurrentMenuContext.GameMenu != null)
+                {
+                    menuId = Campaign.Current.CurrentMenuContext.GameMenu.StringId;
+                }
+
+                if (menuId != "naval_castle_outside" && menuId != "naval_town_outside")
+                {
+                    return;
+                }
+
+                GameMenu.SwitchToMenu(OutsideMenuId);
+            }
         }
 
         private static EncounterGameMenuBehavior Behavior()

@@ -26,6 +26,7 @@ namespace CastleMarketTowns
         private const string GroupCastleRecruits = "{=cmt_mcm_group_castle_recruits}Castle recruits";
         private const string GroupCastleQuests = "{=cmt_mcm_group_castle_quests}Castle quests";
         private const string GroupCastleTraining = "{=cmt_mcm_group_castle_training}Castle training";
+        private const string GroupHapCompat = "{=cmt_mcm_group_hap}Harvest and Production compatibility";
 
         public override string Id { get { return "CastleMarketTowns"; } }
         public override string DisplayName { get { return new TextObject("{=cmt_mcm_title}Castle Market Towns").ToString(); } }
@@ -41,6 +42,8 @@ namespace CastleMarketTowns
         internal const string CastleOriginCapSliderProperty = "MaxCastleOriginCaravans";
         internal const string CastleOriginCapSliderDisplay = "Max caravans from each castle";
         internal const string CpiSupportGroupLeaf = "CaravanPartyLimitIncreasedFixed (Mod Support)";
+        internal const string HapCompatGroupLeaf = "Harvest and Production compatibility";
+        internal const string AllowRebellionProperty = "AllowRebellion";
 
         private bool _unlimitedCastleOriginCaravans;
         private int _uiVersion = 1;
@@ -61,6 +64,7 @@ namespace CastleMarketTowns
             QuestInnAndOut = true;
             QuestDeliverHerd = true;
             QuestFamilyFeud = true;
+            QuestNeedsGrain = true;
             ReplaceSlackenWithFestival = true;
             OverrideCastleProjects = true;
             CaravansVisitCastles = true;
@@ -118,6 +122,9 @@ namespace CastleMarketTowns
             AttributeGoldCost = 5000;
             AttributeInfluenceCost = 25;
             AttributeCooldownDays = 7;
+            HapFoodIntegration = true;
+            HapRawMaterialMode = 1;
+            HapReduceFoodCaravanAttraction = true;
         }
 
         [SettingPropertyBool("{=cmt_mcm_enabled_name}Enable castle markets", Order = 0, RequireRestart = false, HintText = "{=cmt_mcm_enabled_hint}Turns every castle into a small trading settlement. The castle stays a castle: same walls and the same noble recruits from its villages. Rebellion is a separate switch.")]
@@ -249,7 +256,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupCastleMarket)]
         public int CastleStockCeilingPercent { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_export_castle_surplus_name}Sell castle surplus to its town", Order = 3, RequireRestart = false, HintText = "{=cmt_mcm_export_castle_surplus_hint}On by default. Like villagers, the castle sells goods its villages make beyond its reserve to their town and keeps the gold.")]
+        [SettingPropertyBool("{=cmt_mcm_export_castle_surplus_name}Sell castle surplus to its town", Order = 3, RequireRestart = false, HintText = "{=cmt_mcm_export_castle_surplus_hint}On by default. Like villagers, the castle sells goods its villages make beyond its reserve to their town and keeps the gold. With Harvest and Production, food surplus stays at the castle for HAP supply; other goods still export.")]
         [SettingPropertyGroup(GroupCastleMarket)]
         public bool ExportCastleSurplus { get; set; }
 
@@ -291,6 +298,26 @@ namespace CastleMarketTowns
         [SettingPropertyInteger("{=cmt_mcm_castle_caravan_party_size_percent_name}Castle caravan party size", 50, 100, "0", Order = 9, RequireRestart = false, HintText = "{=cmt_mcm_castle_caravan_party_size_percent_hint}Size of caravans that started at a covered castle, as a percent of Caravan Party Limit Increased Fixed. Default 80. Shown only when that mod is enabled.")]
         [SettingPropertyGroup(GroupCastleMarket + "/{=cmt_mcm_group_cpi_support}" + CpiSupportGroupLeaf)]
         public int CastleCaravanPartySizePercent { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_hap_food_name}Use HAP castle-food integration", Order = 0, RequireRestart = false, HintText = "{=cmt_mcm_hap_food_hint}Shown only with Harvest and Production. On by default. Uses HAP's public market-food requisition API so granary Food Stocks stay correct. Off: CMT does not convert castle market food to Food Stocks while HAP is active (the old SoldItems path is never used under HAP).")]
+        [SettingPropertyGroup(GroupHapCompat, GroupOrder = 9)]
+        public bool HapFoodIntegration { get; set; }
+
+        [SettingPropertyInteger("{=cmt_mcm_hap_raw_mode_name}Raw materials for emergency food", 0, 2, "0", Order = 1, RequireRestart = false, HintText = "{=cmt_mcm_hap_raw_mode_hint}Shown only with Harvest and Production. 0 Skip, 1 Last (default, recommended), 2 Include. Maps to HAP RawMaterialMode: workshop inputs stay until other food is used when Last.")]
+        [SettingPropertyGroup(GroupHapCompat)]
+        public int HapRawMaterialMode { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_hap_rebellion_status_name}HAP controls castle rebellions", Order = 2, RequireRestart = false, HintText = "{=cmt_mcm_hap_rebellion_status_hint}Shown only with Harvest and Production. Informational: CMT's castle-rebellion extension is suppressed so HAP alone runs castle rebellion checks. Town rebellions are unchanged. CMT cannot disable HAP's own patches.")]
+        [SettingPropertyGroup(GroupHapCompat)]
+        public bool HapControlsCastleRebellions
+        {
+            get { return true; }
+            set { }
+        }
+
+        [SettingPropertyBool("{=cmt_mcm_hap_reduce_food_caravan_name}Reduce duplicate food caravan attraction", Order = 3, RequireRestart = false, HintText = "{=cmt_mcm_hap_reduce_food_caravan_hint}Shown only with Harvest and Production. On by default. Keeps CMT castle routing, congestion and hard caps, but suppresses CMT's extra hunger/food destination bonus so HAP owns that signal.")]
+        [SettingPropertyGroup(GroupHapCompat)]
+        public bool HapReduceFoodCaravanAttraction { get; set; }
 
         [SettingPropertyBool("{=cmt_mcm_siege_food_from_market_name}Siege food from the castle market", Order = 10, RequireRestart = false, HintText = "{=cmt_mcm_siege_food_from_market_hint}On by default. A besieged castle that runs out of food uses its market's food, as a town does.")]
         [SettingPropertyGroup(GroupCastleMarket)]
@@ -336,7 +363,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupScale)]
         public int MarketplaceCostPercent { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_quest_escort_caravan_name}Escort Merchant Caravan", Order = 0, RequireRestart = false, HintText = "{=cmt_mcm_quest_escort_caravan_hint}Merchant quest. On by default. Needs low security at the castle, as in a town. Quests already running are not affected.")]
+        [SettingPropertyBool("{=cmt_mcm_quest_escort_caravan_name}Escort Merchant Caravan", Order = 0, RequireRestart = false, HintText = "{=cmt_mcm_quest_escort_caravan_hint}Merchant quest. On by default. Needs low security at the castle, as in a town. Covered castles can offer it even when War Sails gives the castle a port; real port towns stay banned by the base game. Quests already running are not affected.")]
         [SettingPropertyGroup(GroupCastleQuests, GroupOrder = 3)]
         public bool QuestEscortCaravan { get; set; }
 
@@ -352,7 +379,7 @@ namespace CastleMarketTowns
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestArtisanCantSell { get; set; }
 
-        [SettingPropertyBool("{=cmt_mcm_quest_caravan_ambush_name}Caravan Ambush", Order = 4, RequireRestart = false, HintText = "{=cmt_mcm_quest_caravan_ambush_hint}Merchant or artisan quest from the base game. On by default. The notable must own at least one caravan, as in a town. Castles have no port, so it is always the land version. Quests already running are not affected.")]
+        [SettingPropertyBool("{=cmt_mcm_quest_caravan_ambush_name}Caravan Ambush", Order = 4, RequireRestart = false, HintText = "{=cmt_mcm_quest_caravan_ambush_hint}Merchant or artisan quest from the base game. On by default. The notable must own at least one caravan, as in a town. Covered castles use the land version even when War Sails gives the castle a port. Quests already running are not affected.")]
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestCaravanAmbush { get; set; }
 
@@ -371,6 +398,10 @@ namespace CastleMarketTowns
         [SettingPropertyBool("{=cmt_mcm_quest_family_feud_name}Family Feud (village)", Order = 8, RequireRestart = false, HintText = "{=cmt_mcm_quest_family_feud_hint}Village quest from the base game. On by default. A landowner of a village owned by a castle can ask for help with a feud against another village of the same castle. Quests already running are not affected.")]
         [SettingPropertyGroup(GroupCastleQuests)]
         public bool QuestFamilyFeud { get; set; }
+
+        [SettingPropertyBool("{=cmt_mcm_quest_needs_grain_name}Needs Grain Seeds (village)", Order = 9, RequireRestart = false, HintText = "{=cmt_mcm_quest_needs_grain_hint}Village quest from the base game. On by default. A headman of a non-wheat village owned by a covered castle can offer it when the castle market is short of grain, as town-bound villages already can. The suggested grain source remains a town; delivery is to the village. Quests already running are not affected.")]
+        [SettingPropertyGroup(GroupCastleQuests)]
+        public bool QuestNeedsGrain { get; set; }
 
         [SettingPropertyBool("{=cmt_mcm_castle_training_name}Castle training", IsToggle = true, Order = 0, RequireRestart = false, HintText = "{=cmt_mcm_castle_training_hint}On by default. Adds Visit the castle trainers to Go to the castle. You and the companions and adult family members in your party can pay to raise skills or an attribute, with a cooldown. Gains are permanent and stay if the mod is removed.")]
         [SettingPropertyGroup(GroupCastleTraining, GroupOrder = 8)]

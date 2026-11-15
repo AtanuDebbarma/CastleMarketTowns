@@ -9,9 +9,10 @@ using TaleWorlds.Library;
 
 namespace CastleMarketTowns
 {
-    // After ordinary ItemConsumptionBehavior, convert remaining market food into Food Stocks
-    // via SoldItems only. Town.DailyTick applies FoodChange from SoldItems — do not also
-    // add FoodStocks directly or the same units are counted twice.
+    // After ordinary ItemConsumptionBehavior, convert remaining market food into Food Stocks.
+    // Without HAP: via SoldItems only (Town.DailyTick applies FoodChange from SoldItems).
+    // With HAP Ready: HAP TryRequisitionMarketFood owns removal and FoodStocks credit.
+    // With HAP present but not Ready / food toggle off: consume nothing (never SoldItems under HAP).
     internal static class CastleCaravanFoodBridge
     {
         private static readonly FieldInfo SoldItemsField = AccessTools.Field(typeof(Town), "_soldItems");
@@ -33,15 +34,39 @@ namespace CastleMarketTowns
                 return;
             }
 
+            CastleHapCompat.EnsureValidated();
             float withoutMarket = town.FoodChangeWithoutMarketStocks;
-            float ordinaryFood = OrdinaryFoodAlreadyCredited(town);
-            float remaining = Math.Max(0f, -(withoutMarket + ordinaryFood));
+            // Vanilla food model credits SoldItems; HAP's CustomSettlementFoodModel does not — do not subtract them under HAP.
+            float remaining;
+            if (CastleHapCompat.FoodIntegrationReady)
+            {
+                remaining = Math.Max(0f, -withoutMarket);
+            }
+            else
+            {
+                remaining = Math.Max(0f, -(withoutMarket + OrdinaryFoodAlreadyCredited(town)));
+            }
+
             if (remaining < 0.01f)
             {
                 return;
             }
 
-            Dictionary<ItemCategory, int> takenByCategory = ConsumeMarketFood(town.Settlement, (int)Math.Ceiling(remaining));
+            int desired = (int)Math.Ceiling(remaining);
+
+            if (CastleHapCompat.FoodIntegrationReady)
+            {
+                int transferred;
+                CastleHapCompat.TryRequisitionRemainingDeficit(town, desired, out transferred);
+                return;
+            }
+
+            if (CastleHapCompat.BlocksSoldItemsFoodBridge)
+            {
+                return;
+            }
+
+            Dictionary<ItemCategory, int> takenByCategory = ConsumeMarketFood(town.Settlement, desired);
             if (takenByCategory == null || takenByCategory.Count == 0)
             {
                 return;

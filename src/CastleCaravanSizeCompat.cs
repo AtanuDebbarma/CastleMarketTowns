@@ -99,7 +99,8 @@ namespace CastleMarketTowns
 
         private static MethodInfo FindPartyMemberSizeLimit(Type type)
         {
-            Type[] args = new Type[] { typeof(PartyBase), typeof(bool) };
+            // Bannerlord 1.5.7+: GetPartyMemberSizeLimit(PartyBase, isCurrentlyAtSea, includeDescriptions).
+            Type[] args = new Type[] { typeof(PartyBase), typeof(bool), typeof(bool) };
             while (type != null && type != typeof(object))
             {
                 MethodInfo method = type.GetMethod(
@@ -119,7 +120,7 @@ namespace CastleMarketTowns
             return null;
         }
 
-        private static void GetPartyMemberSizeLimitPostfix(PartyBase party, bool includeDescriptions, ref ExplainedNumber __result)
+        private static void GetPartyMemberSizeLimitPostfix(PartyBase party, bool isCurrentlyAtSea, bool includeDescriptions, ref ExplainedNumber __result)
         {
             CastleMarketTownsSettings settings = CastleMarketTownsSettings.Current;
             if (settings == null || !ShowMcmGroup() || party == null || !party.IsMobile)

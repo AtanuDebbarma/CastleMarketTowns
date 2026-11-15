@@ -49,9 +49,11 @@ namespace CastleMarketTowns
                 }
 
                 bool showCpi = CastleCaravanSizeCompat.ShowMcmGroup();
+                bool showHap = CastleHapCompat.ShowMcmGroup;
                 bool hideOriginCapSlider = cmt != null && cmt.UnlimitedCastleOriginCaravans;
+                bool hideAllowRebellion = showHap;
 
-                if (showCpi && !hideOriginCapSlider)
+                if (showCpi && showHap && !hideOriginCapSlider && !hideAllowRebellion)
                 {
                     return;
                 }
@@ -66,6 +68,16 @@ namespace CastleMarketTowns
 
                     string group = GetGroupName(definition);
                     if (!showCpi && IsCpiSupportGroup(group))
+                    {
+                        continue;
+                    }
+
+                    if (!showHap && IsHapCompatGroup(group))
+                    {
+                        continue;
+                    }
+
+                    if (hideAllowRebellion && IsAllowRebellionSetting(definition))
                     {
                         continue;
                     }
@@ -90,6 +102,25 @@ namespace CastleMarketTowns
         {
             return group.IndexOf(CastleMarketTownsSettings.CpiSupportGroupLeaf) >= 0
                 || group.IndexOf("cmt_mcm_cpi_support") >= 0;
+        }
+
+        private static bool IsHapCompatGroup(string group)
+        {
+            return group.IndexOf(CastleMarketTownsSettings.HapCompatGroupLeaf) >= 0
+                || group.IndexOf("cmt_mcm_group_hap") >= 0;
+        }
+
+        private static bool IsAllowRebellionSetting(ISettingsPropertyDefinition definition)
+        {
+            string propertyName = GetPropertyName(definition);
+            if (propertyName == CastleMarketTownsSettings.AllowRebellionProperty)
+            {
+                return true;
+            }
+
+            string display = GetDisplayName(definition);
+            return display.IndexOf("cmt_mcm_allow_rebellion_name") >= 0
+                || display.IndexOf("Castles can rebel") >= 0;
         }
 
         private static bool IsOriginCapSlider(ISettingsPropertyDefinition definition, string group)

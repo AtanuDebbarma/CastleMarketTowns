@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.5.0
+
+Bannerlord **1.5.7** / War Sails **1.3.7** line. The last **1.4.x** package remains on tag `v1.4.1`.
+
+- **Targets** Native / SandBox / StoryMode **v1.5.7**, MCM **v5.13.1**, Harmony **v2.4.2.248**.
+- **Naval castle entry.** Sea approach now opens `naval_castle_outside`. Friendly docking still reaches `castle_outside` and the full castle market menus. For covered castles, wartime or crime denials on that naval menu redirect to `castle_outside` so **Disguise**, **Deliver Herd to Guards** and **Deliver Items to Guards** keep working. Siege / active naval blockade screens stay vanilla.
+- **Coastal castle ports.** Escort Merchant Caravan and Caravan Ambush still appear at covered castles that now have real ports; port towns remain banned by the base game. MCM wording updated.
+- **Needs Grain Seeds (village).** Villages bound to a covered castle can offer the base game's headman grain-seed quest (vanilla only allowed town-bound villages). The suggested grain source remains a non-castle town; delivery is to the village. The `ConditionsHold` redirect requires exactly one `Settlement.IsTown` match and fails closed with a named log if a game update changes that count. MCM toggle on by default; coverage loss soft-cancels; turning the toggle off does not cancel ongoing quests. Other castle-bound village quests that already work in vanilla are left alone.
+- Docs updated for 1.5.7 / 1.3.7 target versions and coastal ports. Escort / Caravan Ambush `HasPort` redirects require exactly one match and fail closed, same as Needs Grain.
+- **Harvest and Production (optional).** Soft reflection adapter for HAP's `TryRequisitionMarketFood` so covered-castle market food reaches HAP Food Stocks (never `SoldItems` while HAP is active). HAP requisition demand uses HAP food-change only (no SoldItems subtraction). While the HAP module is loaded, food surplus export stays skipped and CMT's extra food-caravan attraction can be suppressed even if the food API is rejected or disabled. CMT castle rebellions defer to HAP; optional MCM group appears only when HAP is loaded. Congestion / hard caravan caps stay.
+- **HAP 1.7.1 FindText guard.** When HAP is loaded, CMT swallows early `GameTexts.FindText` NullReferenceExceptions so HAP's `HAPTextObjects` static ctor can finish on Bannerlord 1.5.7 (otherwise town/prosperity UI dies with `TypeInitializationException`). Does nothing without HAP.
+- **CTE volunteer order.** Castle recruit-speed postfix uses `Priority.Low` so Clan Tier Expanded's dynasty volunteer postfix (`Priority.Last`) multiplies and clamps after CMT's percentage.
+- **Volunteer daily-tick NRE (compat only).** Sanitize/finalizer on `UpdateVolunteersOfNotablesInSettlement` for all settlements (valid troops unchanged — solo CMT no-op). Clears not-ready / culture-less leftover troop-pack slots; absorbs a leftover NullReferenceException for that tick with a named log. Not shared with `HourlyTickParty` (no Settlement arg; that broke the whole volunteer class).
+
+- **Caravan Party Limit Increased Fixed.** Castle caravan size percent patches `GetPartyMemberSizeLimit(PartyBase, isCurrentlyAtSea, includeDescriptions)` for Bannerlord 1.5.7.
+
 ## 1.4.1
 
 - **Caravan trains at covered castles.** Covered castles default to **two** active caravans that started there (MCM: Max caravans from each castle, 1–20), with an **Unlimited** toggle for 1.4.0 / town-like per-merchant formation. Visiting foreign caravans do not count toward the origin cap. Merchants stay; only new formation is blocked at the cap. Existing excess caravans are not deleted. Anti-loop / congestion / hard-crowd checks apply to **covered castle** destinations (five-day return penalty, unbounded congestion decay, hard reject at 12 already targeting/present). Pure town↔town routes (for example Diathma↔Saneopa) stay vanilla and are out of scope.
