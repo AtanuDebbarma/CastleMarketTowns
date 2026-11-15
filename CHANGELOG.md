@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1
+
+- **HAP load order unlocked.** Removed optional `HarvestAndProduction` entries from `SubModule.xml` / `DependedModuleMetadatas`. The Bannerlord launcher was locking HAP above CMT even with `LoadAfterThis`, which blocked free reordering. HAP remains optional soft support (runtime detection); FindText / volunteer / food-compat fixes are unchanged. Prefer loading HAP **below** CMT so the FindText guard can run before HAP init.
+
 ## 1.5.0
 
 Bannerlord **1.5.7** / War Sails **1.3.7** line. The last **1.4.x** package remains on tag `v1.4.1`.

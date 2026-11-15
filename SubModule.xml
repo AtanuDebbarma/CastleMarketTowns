@@ -2,7 +2,7 @@
 <Module>
   <Name value="Castle Market Towns"/>
   <Id value="CastleMarketTowns"/>
-  <Version value="v1.5.0"/>
+  <Version value="v1.5.1"/>
   <SingleplayerModule value="true"/>
   <MultiplayerModule value="false"/>
   <DependedModules>
@@ -12,7 +12,6 @@
     <DependedModule Id="StoryMode" DependentVersion="v1.5.7"/>
     <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2.248"/>
     <DependedModule Id="Bannerlord.MBOptionScreen" DependentVersion="v5.13.1"/>
-    <DependedModule Id="HarvestAndProduction" Optional="true"/>
   </DependedModules>
   <DependedModuleMetadatas>
     <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="v1.5.7"/>
@@ -21,7 +20,6 @@
     <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="v1.5.7"/>
     <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" version="v2.4.2.248"/>
     <DependedModuleMetadata id="Bannerlord.MBOptionScreen" order="LoadBeforeThis" version="v5.13.1"/>
-    <DependedModuleMetadata id="HarvestAndProduction" order="LoadAfterThis" optional="true"/>
   </DependedModuleMetadatas>
   <SubModules>
     <SubModule>
